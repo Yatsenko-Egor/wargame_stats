@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Регистрация — Wargame Stats
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page">
+
+    <div class="auth-container register-container">
+
+        <div class="auth-card">
+
+            <h1 class="auth-title">
+                Регистрация
+            </h1>
+
+
+            {% if error %}
+                <div class="form-error">
+                    {{ error }}
+                </div>
+            {% endif %}
+
+
+            <form
+                method="post"
+                action="{{ url_for('auth.register') }}"
+                id="register-form"
+            >
+
+                <div class="form-group">
+                    <label
+                        for="nickname"
+                        class="form-label"
+                    >
+                        Никнейм
+                    </label>
+
+                    <input
+                        type="text"
+                        id="nickname"
+                        name="nickname"
+                        class="form-input"
+                        maxlength="100"
+                        required
+                        autocomplete="username"
+                    >
+                </div>
+
+
+                <div class="form-group">
+                    <label
+                        for="email"
+                        class="form-label"
+                    >
+                        Email
+                    </label>
+
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        class="form-input"
+                        maxlength="255"
+                        required
+                        autocomplete="email"
+                    >
+                </div>
+
+
+                <div class="form-group">
+                    <label
+                        for="password"
+                        class="form-label"
+                    >
+                        Пароль
+                    </label>
+
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        class="form-input"
+                        required
+                        autocomplete="new-password"
+                    >
+                </div>
+
+
+                <div class="faction-selector">
+
+                    <div class="selected-factions-title">
+                        Собираемые фракции
+                    </div>
+
+
+                    <div class="faction-add-row">
+
+                        <div class="form-group">
+
+                            <label
+                                for="wargame-select"
+                                class="form-label"
+                            >
+                                Варгейм
+                            </label>
+
+                            <select
+                                id="wargame-select"
+                                class="form-select"
+                            >
+                                <option value="">
+                                    Выберите варгейм
+                                </option>
+
+                                {% for wargame in wargames %}
+
+                                    <option value="{{ wargame.id }}">
+                                        {{ wargame.name }}
+                                    </option>
+
+                                {% endfor %}
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label
+                                for="faction-select"
+                                class="form-label"
+                            >
+                                Фракция
+                            </label>
+
+                            <select
+                                id="faction-select"
+                                class="form-select"
+                                disabled
+                            >
+                                <option value="">
+                                    Сначала выберите варгейм
+                                </option>
+                            </select>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <button
+                                type="button"
+                                id="add-faction"
+                                class="btn btn-secondary btn-small"
+                                disabled
+                            >
+                                Добавить
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="selected-factions">
+
+                        <div
+                            id="no-factions"
+                            class="no-factions"
+                        >
+                            Фракции пока не выбраны.
+                        </div>
+
+
+                        <ul
+                            id="selected-factions-list"
+                            class="selected-factions-list"
+                        >
+                        </ul>
+
+                    </div>
+
+                </div>
+
+
+                {#
+                    Сюда JavaScript будет добавлять
+                    hidden input'ы вида:
+
+                    <input
+                        type="hidden"
+                        name="faction_ids"
+                        value="123"
+                    >
+
+                    Flask получит их через:
+
+                    request.form.getlist("faction_ids")
+                #}
+
+                <div id="selected-faction-inputs"></div>
+
+
+                <div class="form-actions">
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                    >
+                        Зарегистрироваться
+                    </button>
+
+                </div>
+
+            </form>
+
+
+            <div class="auth-footer">
+                Уже есть аккаунт?
+                <a href="{{ url_for('auth.login') }}">
+                    Войти
+                </a>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+    const factions = [
+        {% for faction in factions %}
+        {
+            id: {{ faction.id }},
+            name: {{ faction.faction_name | tojson }},
+            wargameId: {{ faction.wargame_id }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+</script>
+
+<script
+    src="{{ url_for('static', filename='js/register.js') }}"
+>
+</script>
+
+{% endblock %}

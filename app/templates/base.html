@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}Wargame Stats{% endblock %}</title>
+
+    <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+<body>
+
+<header class="site-header">
+    <div class="container header-content">
+
+        <a href="/" class="site-logo">
+            WARGAME <span>STATS</span>
+        </a>
+
+        <nav class="site-nav">
+            {% if current_user %}
+            <a
+                    href="{{ url_for('profile.view', nickname=current_user.nickname) }}"
+                    class="user-name"
+            >
+                {{ current_user.nickname }}
+            </a>
+
+            <form
+                    method="post"
+                    action="{{ url_for('auth.logout') }}"
+                    class="logout-form"
+            >
+                <button type="submit" class="nav-button">
+                    Выйти
+                </button>
+            </form>
+            {% else %}
+            <a href="{{ url_for('auth.login') }}">
+                Войти
+            </a>
+
+            <a href="{{ url_for('auth.register') }}">
+                Регистрация
+            </a>
+            {% endif %}
+        </nav>
+
+    </div>
+</header>
+
+
+<main class="site-main">
+    <div class="container">
+
+        {% block content %}
+        {% endblock %}
+
+    </div>
+</main>
+
+
+<footer class="site-footer">
+    <div class="container">
+        Wargame Stats
+    </div>
+</footer>
+
+</body>
+</html>

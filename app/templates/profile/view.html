@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {{ player.nickname }} — Wargame Stats
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page">
+
+    <div class="profile-header">
+
+        <div class="profile-avatar">
+            {% if player.avatar_url %}
+                <img
+                    src="{{ player.avatar_url }}"
+                    alt="{{ player.nickname }}"
+                    class="profile-avatar-image"
+                >
+            {% else %}
+                <div class="profile-avatar-placeholder">
+                    {{ player.nickname[0] | upper }}
+                </div>
+            {% endif %}
+        </div>
+
+        <h1 class="profile-nickname">
+            {{ player.nickname }}
+        </h1>
+
+        <div class="profile-rating">
+            {% if rating is not none %}
+                <span class="profile-rating-value">
+                    {{ rating }}
+                </span>
+                <span class="profile-rating-count">
+                    ({{ rating_count }})
+                </span>
+            {% else %}
+                <span class="profile-rating-value">
+                    —
+                </span>
+                <span class="profile-rating-count">
+                    Отсутствует рейтинг
+                </span>
+            {% endif %}
+        </div>
+
+        {% if is_self %}
+            <a
+                href="#"
+                class="profile-settings-link"
+            >
+                Настройки
+            </a>
+        {% endif %}
+
+    </div>
+
+
+    <section class="profile-statistics">
+
+        <h2 class="profile-section-title">
+            Статистика
+        </h2>
+
+        <form
+            method="get"
+            action="{{ url_for('profile.view', nickname=player.nickname) }}"
+            class="profile-statistics-form"
+        >
+
+            <div class="profile-statistics-filters">
+
+                <div class="form-group">
+                    <label
+                        for="wargame"
+                        class="form-label"
+                    >
+                        Варгейм
+                    </label>
+
+                    <select
+                        id="wargame"
+                        name="wargame"
+                        class="form-select"
+                        onchange="this.form.submit()"
+                    >
+                        <option
+                            value="all"
+                            {% if selected_wargame_id == "all" %}
+                                selected
+                            {% endif %}
+                        >
+                            Все варгеймы
+                        </option>
+
+                        {% for wargame in wargames %}
+                            <option
+                                value="{{ wargame.id }}"
+                                {% if wargame.id == selected_wargame_id %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ wargame.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+
+                <div class="form-group">
+                    <label
+                        for="edition"
+                        class="form-label"
+                    >
+                        Редакция
+                    </label>
+
+                    <select
+                        id="edition"
+                        name="edition"
+                        class="form-select"
+                        onchange="this.form.submit()"
+                    >
+                        <option
+                            value="all"
+                            {% if selected_edition_id == "all" %}
+                                selected
+                            {% endif %}
+                        >
+                            Все редакции
+                        </option>
+
+                        {% for edition in available_editions %}
+                            <option
+                                value="{{ edition.id }}"
+                                {% if edition.id == selected_edition_id %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ edition.edition_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+            </div>
+
+        </form>
+
+
+        <p class="profile-statistics-caption">
+            {{ selected_wargame_label }} / {{ selected_edition_label }}
+        </p>
+
+
+        {% if statistics_rows_for_table %}
+
+            <table class="profile-statistics-table">
+
+                <thead>
+                    <tr>
+                        <th>Варгейм</th>
+                        <th>Фракция</th>
+                        <th>Сыграно партий</th>
+                        <th>Побед</th>
+                        <th>Поражений</th>
+                        <th>Ничей</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for row in statistics_rows_for_table %}
+                        <tr>
+                            <td>{{ row.wargame_name }}</td>
+                            <td>{{ row.faction_names }}</td>
+                            <td>
+                                {% if row.game_count is none %}
+                                    —
+                                {% else %}
+                                    {{ row.game_count }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if row.wins is none %}
+                                    —
+                                {% else %}
+                                    {{ row.wins }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if row.losses is none %}
+                                    —
+                                {% else %}
+                                    {{ row.losses }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if row.draws is none %}
+                                    —
+                                {% else %}
+                                    {{ row.draws }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+
+        {% else %}
+
+            <p class="profile-empty">
+                Нет данных для отображения.
+            </p>
+
+        {% endif %}
+
+    </section>
+
+        <section class="profile-games">
+
+        <h2 class="profile-section-title">
+            Партии
+        </h2>
+
+        {% if games_for_table %}
+
+            <table class="profile-games-table">
+
+                <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>Партия</th>
+                        <th>Дата</th>
+                        <th>Варгейм</th>
+                        <th>Редакция</th>
+                        <th>Очков</th>
+                        <th>Результат</th>
+                        {% if is_self %}
+                            <th>Статус</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for game in games_for_table %}
+                        <tr>
+                            <td>
+                                {{ (games_page - 1) * 10 + loop.index }}
+                            </td>
+                            <td>{{ game.name }}</td>
+                            <td>
+                                {{ game.date.strftime("%d.%m.%Y") }}
+                            </td>
+                            <td>{{ game.wargame_name }}</td>
+                            <td>{{ game.edition_name }}</td>
+                            <td>{{ game.roster_points }}</td>
+                            <td>
+                                {% if game.result %}
+                                    <span class="game-result game-result-{{ game.result | lower }}">
+                                        {{ game.result }}
+                                    </span>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            {% if is_self %}
+                                <td>{{ game.status_label }}</td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+
+
+            {% if games_pages > 1 %}
+
+                <nav class="profile-pagination">
+
+                    {% for page_number in range(1, games_pages + 1) %}
+
+                        {% if page_number == games_page %}
+
+                            <span class="profile-pagination-current">
+                                {{ page_number }}
+                            </span>
+
+                        {% else %}
+
+                            <a
+                                href="{{ url_for(
+                                    'profile.view',
+                                    nickname=player.nickname,
+                                    wargame=selected_wargame_id,
+                                    edition=selected_edition_id,
+                                    page=reviews_page,
+                                    games_page=page_number,
+                                ) }}"
+                                class="profile-pagination-link"
+                            >
+                                {{ page_number }}
+                            </a>
+
+                        {% endif %}
+
+                    {% endfor %}
+
+                </nav>
+
+            {% endif %}
+
+        {% else %}
+
+            <p class="profile-empty">
+                Нет партий.
+            </p>
+
+        {% endif %}
+
+    </section>
+
+
+    <section class="profile-reviews">
+
+        <h2 class="profile-section-title">
+            Отзывы
+        </h2>
+
+        {% if reviews %}
+
+            <ul class="profile-reviews-list">
+
+                {% for review in reviews %}
+
+                    <li class="profile-review">
+
+                        <div class="profile-review-header">
+
+                            <span class="profile-review-author">
+                                {{ review.author_player.nickname }}
+                            </span>
+
+                            <span class="profile-review-rating">
+                                {{ review.rating }}
+                            </span>
+
+                            <span class="profile-review-date">
+                                {{ review.created_at.strftime("%d.%m.%Y") }}
+                            </span>
+
+                        </div>
+
+                        {% if review.text %}
+                            <div class="profile-review-text">
+                                {{ review.text }}
+                            </div>
+                        {% endif %}
+
+                    </li>
+
+                {% endfor %}
+
+            </ul>
+
+
+            {% if reviews_pages > 1 %}
+
+                <nav class="profile-pagination">
+
+                    {% for page_number in range(1, reviews_pages + 1) %}
+
+                        {% if page_number == reviews_page %}
+
+                            <span class="profile-pagination-current">
+                                {{ page_number }}
+                            </span>
+
+                        {% else %}
+
+                            <a
+                                href="{{ url_for(
+                                    'profile.view',
+                                    nickname=player.nickname,
+                                    wargame=selected_wargame_id,
+                                    edition=selected_edition_id,
+                                    page=page_number,
+                                ) }}"
+                                class="profile-pagination-link"
+                            >
+                                {{ page_number }}
+                            </a>
+
+                        {% endif %}
+
+                    {% endfor %}
+
+                </nav>
+
+            {% endif %}
+
+        {% else %}
+
+            <p class="profile-empty">
+                Нет отзывов.
+            </p>
+
+        {% endif %}
+
+    </section>
+
+</div>
+
+{% endblock %}
