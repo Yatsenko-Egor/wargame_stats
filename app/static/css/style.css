@@ -1109,3 +1109,286 @@ select {
     }
 
 }
+
+/* =========================
+   GAME FORM
+   ========================= */
+
+.game-form {
+    max-width: 900px;
+}
+
+
+.game-team {
+    padding: 24px;
+    margin-bottom: 24px;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+
+    background-color: var(--color-background-light);
+}
+
+
+.game-team-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 20px;
+}
+
+
+.game-team-title {
+    margin: 0;
+
+    font-size: 18px;
+    font-weight: 600;
+}
+
+
+.game-team-players {
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+
+.game-player {
+    padding: 16px;
+    margin-bottom: 12px;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+
+    background-color: var(--color-background);
+}
+
+
+.game-player-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 14px;
+}
+
+
+.game-player-title {
+    color: var(--color-gray-light);
+    font-size: 14px;
+}
+
+
+.player-suggestions {
+    position: relative;
+}
+
+
+.player-suggestion {
+    padding: 8px 12px;
+
+    border: 1px solid var(--color-border);
+    border-top: none;
+
+    background-color: var(--color-background-light);
+
+    cursor: pointer;
+}
+
+
+.player-suggestion:hover {
+    background-color: var(--color-background);
+}
+
+
+.player-factions {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 12px;
+
+    margin-top: 6px;
+}
+
+
+.game-faction-item {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 6px;
+
+    font-size: 14px;
+
+    cursor: pointer;
+}
+
+
+.game-faction-item input {
+    margin: 0;
+}
+
+
+.game-form .form-actions {
+    display: flex;
+    justify-content: space-between;
+
+    gap: 12px;
+}
+
+/* =========================
+   PLAYER FACTION TAGS
+   ========================= */
+
+.faction-add-row {
+    display: grid;
+
+    grid-template-columns: minmax(0, 1fr) auto;
+
+    gap: 10px;
+
+    align-items: center;
+}
+
+
+.player-factions-list {
+    margin: 12px 0 0;
+    padding: 0;
+
+    list-style: none;
+}
+
+
+.player-faction-tag {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 6px 10px;
+    margin: 0 6px 6px 0;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+
+    background-color: var(--color-background-light);
+
+    font-size: 13px;
+}
+
+
+.player-faction-remove {
+    padding: 0;
+
+    border: 0;
+    background: none;
+
+    color: var(--color-gray-light);
+
+    font-size: 16px;
+    line-height: 1;
+
+    cursor: pointer;
+}
+
+
+.player-faction-remove:hover {
+    color: var(--color-primary);
+}
+
+/* =========================
+   CLIENT ERRORS
+   ========================= */
+
+.client-errors-list {
+    margin: 0;
+    padding-left: 20px;
+}
+
+
+.client-errors-list li {
+    margin-bottom: 4px;
+}
+
+
+.client-errors-list li:last-child {
+    margin-bottom: 0;
+}
+
+/* =========================
+   INLINE REVIEW FORM
+   ========================= */
+
+.profile-review-status {
+    margin-left: auto;
+
+    color: var(--color-gray-light);
+
+    font-size: 13px;
+}
+
+
+.review-inline-form {
+    margin-top: 14px;
+}
+
+
+.review-inline-fields {
+    display: grid;
+
+    grid-template-columns: 120px minmax(0, 1fr);
+
+    gap: 14px;
+
+    align-items: start;
+}
+
+
+.review-inline-fields .form-group {
+    margin-bottom: 0;
+}
+
+
+.review-inline-text textarea {
+    min-height: 60px;
+
+    resize: vertical;
+}
+
+
+.review-inline-actions {
+    display: flex;
+
+    justify-content: flex-end;
+
+    margin-top: 14px;
+}
+
+
+@media (max-width: 700px) {
+
+    .review-inline-fields {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+/* =========================
+   PENDING NOTICE
+   ========================= */
+
+.profile-pending-notice {
+    padding: 14px 18px;
+
+    margin-bottom: 18px;
+
+    border: 1px solid var(--color-gold);
+    border-radius: var(--radius);
+
+    background-color: rgba(184, 155, 94, 0.1);
+
+    color: var(--color-gold);
+
+    font-size: 14px;
+
+    font-weight: 600;
+}

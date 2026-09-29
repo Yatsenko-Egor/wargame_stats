@@ -4,6 +4,7 @@ from app import db
 confirmation_response = db.Enum(
     "CONFIRM",
     "CONFLICT",
+    "WAIT",
     name="confirmation_response",
 )
 

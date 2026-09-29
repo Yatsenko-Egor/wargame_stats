@@ -5,6 +5,8 @@ from app.extensions import db, migrate
 from app.auth import auth_bp
 from app.profile import profile_bp
 from app.auth.session import get_current_user
+from app.games import games_bp
+from app.confirm import confirm_bp
 
 
 def create_app():
@@ -17,6 +19,8 @@ def create_app():
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(profile_bp)
+    app.register_blueprint(games_bp)
+    app.register_blueprint(confirm_bp)
 
     @app.before_request
     def load_current_user():

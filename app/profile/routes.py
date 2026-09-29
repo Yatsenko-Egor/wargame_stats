@@ -14,10 +14,9 @@ from app.models import (
     WargameEdition,
     Team,
     PlayerGame,
-    GameConfirmation,
+    GameConfirmation, GameVersion,
 )
 from app.profile import profile_bp
-
 
 REVIEWS_PER_PAGE = 10
 GAMES_PER_PAGE = 10
@@ -28,8 +27,8 @@ def view(nickname):
     player = load_player(nickname)
 
     is_self = (
-        g.current_user is not None
-        and g.current_user.id == player.id
+            g.current_user is not None
+            and g.current_user.id == player.id
     )
 
     rating, rating_count = load_rating(player)
@@ -54,18 +53,13 @@ def view(nickname):
         wargames_by_id,
     ) = load_wargames_and_editions(available_wargame_ids)
 
-    selected_wargame_id = resolve_selected_wargame(
-        request,
-        wargames_by_id,
-    )
+    selected_wargame_id = resolve_selected_wargame(request, wargames_by_id)
 
-    if selected_wargame_id == "all":
-        available_editions = editions
-    else:
-        available_editions = editions_by_wargame.get(
-            selected_wargame_id,
-            [],
-        )
+    available_editions = (
+        editions_by_wargame.get(selected_wargame_id, [])
+        if selected_wargame_id is not None
+        else []
+    )
 
     selected_edition_id = resolve_selected_edition(
         request,
@@ -77,49 +71,38 @@ def view(nickname):
 
     faction_lists = load_faction_lists(faction_list_ids)
 
-    if selected_wargame_id == "all":
-        relevant_wargame_ids = available_wargame_ids
-    else:
-        relevant_wargame_ids = {selected_wargame_id}
+    relevant_wargame_ids = (
+        {selected_wargame_id}
+        if selected_wargame_id is not None
+        else set()
+    )
 
-    if selected_edition_id == "all":
-        if selected_wargame_id == "all":
-            relevant_editions = [
-                edition
-                for edition in editions
-                if edition.wargame_id in relevant_wargame_ids
-            ]
-        else:
-            relevant_editions = editions_by_wargame.get(
-                selected_wargame_id,
-                [],
-            )
-    else:
-        relevant_editions = [editions_by_id[selected_edition_id]]
+    relevant_editions = (
+        [editions_by_id[selected_edition_id]]
+        if selected_edition_id is not None
+        else []
+    )
 
     statistics_rows_for_table = build_statistics_rows(
         faction_lists=faction_lists,
         stats_by_key=stats_by_key,
         player_faction_ids=player_faction_ids,
-        available_wargame_ids=available_wargame_ids,
         relevant_wargame_ids=relevant_wargame_ids,
         relevant_editions=relevant_editions,
         wargames_by_id=wargames_by_id,
     )
 
-    if selected_wargame_id == "all":
-        selected_wargame_label = "Все варгеймы"
-    else:
-        selected_wargame_label = wargames_by_id[
-            selected_wargame_id
-        ].name
+    selected_wargame_label = (
+        wargames_by_id[selected_wargame_id].name
+        if selected_wargame_id is not None
+        else "—"
+    )
 
-    if selected_edition_id == "all":
-        selected_edition_label = "Все редакции"
-    else:
-        selected_edition_label = editions_by_id[
-            selected_edition_id
-        ].edition_name
+    selected_edition_label = (
+        editions_by_id[selected_edition_id].edition_name
+        if selected_edition_id is not None
+        else "—"
+    )
 
     games_page = request.args.get(
         "games_page",
@@ -135,6 +118,8 @@ def view(nickname):
 
     game_ids = [game.id for game in games]
 
+    conflict_ids_by_game = load_conflict_ids(game_ids)
+
     teams_by_game, players_by_team = load_teams_and_players(game_ids)
 
     if is_self:
@@ -147,8 +132,14 @@ def view(nickname):
         teams_by_game=teams_by_game,
         players_by_team=players_by_team,
         confirmations_by_game=confirmations_by_game,
+        conflict_ids_by_game=conflict_ids_by_game,
         player=player,
         is_self=is_self,
+    )
+
+    has_pending = (
+            is_self
+            and has_pending_confirmations(player)
     )
 
     reviews_page = request.args.get(
@@ -184,6 +175,7 @@ def view(nickname):
         reviews_page=reviews_page,
         reviews_pages=reviews_pages,
         reviews_total=reviews_total,
+        has_pending=has_pending
     )
 
 
@@ -270,30 +262,27 @@ def load_wargames_and_editions(available_wargame_ids):
 def resolve_selected_wargame(request, wargames_by_id):
     raw_value = request.args.get("wargame", "")
 
-    if raw_value == "all":
-        return "all"
-
     try:
         parsed = int(raw_value)
     except (TypeError, ValueError):
-        return "all"
+        parsed = None
 
     if parsed in wargames_by_id:
         return parsed
 
-    return "all"
+    if not wargames_by_id:
+        return None
+
+    return max(wargames_by_id.keys())
 
 
 def resolve_selected_edition(request, available_editions, editions_by_id):
     raw_value = request.args.get("edition", "")
 
-    if raw_value == "all":
-        return "all"
-
     try:
         parsed = int(raw_value)
     except (TypeError, ValueError):
-        return "all"
+        parsed = None
 
     available_edition_ids = {
         edition.id
@@ -303,7 +292,10 @@ def resolve_selected_edition(request, available_editions, editions_by_id):
     if parsed in available_edition_ids:
         return parsed
 
-    return "all"
+    if not available_editions:
+        return None
+
+    return max(edition.id for edition in available_editions)
 
 
 def load_statistics(player):
@@ -390,13 +382,12 @@ def get_wargame_by_id(wargames_by_id, wargame_id):
 
 
 def build_statistics_rows(
-    faction_lists,
-    stats_by_key,
-    player_faction_ids,
-    available_wargame_ids,
-    relevant_wargame_ids,
-    relevant_editions,
-    wargames_by_id,
+        faction_lists,
+        stats_by_key,
+        player_faction_ids,
+        relevant_wargame_ids,
+        relevant_editions,
+        wargames_by_id,
 ):
     candidate_faction_list_ids = set()
 
@@ -413,8 +404,8 @@ def build_statistics_rows(
             continue
 
         if not all(
-            faction.id in player_faction_ids
-            for faction in factions
+                faction.id in player_faction_ids
+                for faction in factions
         ):
             continue
 
@@ -440,8 +431,8 @@ def build_statistics_rows(
             continue
 
         if not all(
-            faction.id in player_faction_ids
-            for faction in factions
+                faction.id in player_faction_ids
+                for faction in factions
         ):
             continue
 
@@ -517,6 +508,18 @@ def build_statistics_rows(
     return statistics_rows_for_table
 
 
+def has_pending_confirmations(player):
+    return (
+            db.session.query(GameConfirmation.id)
+            .filter(
+                GameConfirmation.player_id == player.id,
+                GameConfirmation.response == "WAIT",
+            )
+            .first()
+            is not None
+    )
+
+
 def load_games(player, is_self, page):
     games_query = (
         Game.query
@@ -552,6 +555,25 @@ def load_games(player, is_self, page):
     )
 
     return games, page, games_pages, games_total
+
+
+def load_conflict_ids(game_ids):
+    if not game_ids:
+        return {}
+
+    rows = (
+        db.session.query(
+            GameVersion.game_id,
+            GameVersion.game_conflict_id,
+        )
+        .filter(GameVersion.game_id.in_(game_ids))
+        .all()
+    )
+
+    return {
+        game_id: conflict_id
+        for game_id, conflict_id in rows
+    }
 
 
 def load_teams_and_players(game_ids):
@@ -638,12 +660,13 @@ def resolve_status_label(game, confirmation):
 
 
 def build_games_for_table(
-    games,
-    teams_by_game,
-    players_by_team,
-    confirmations_by_game,
-    player,
-    is_self,
+        games,
+        teams_by_game,
+        players_by_team,
+        confirmations_by_game,
+        conflict_ids_by_game,
+        player,
+        is_self,
 ):
     games_for_table = []
 
@@ -689,6 +712,8 @@ def build_games_for_table(
                 "roster_points": game.roster_points,
                 "result": player_result,
                 "status_label": status_label,
+                "status": game.status,
+                "conflict_id": conflict_ids_by_game.get(game.id),
             }
         )
 

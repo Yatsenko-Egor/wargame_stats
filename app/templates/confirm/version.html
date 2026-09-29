@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Оспаривание — Wargame Stats
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page">
+
+    <div class="page-header">
+        <h1 class="page-title">
+            Оспаривание версии
+        </h1>
+        <p class="page-description">
+            Подтверждение #{{ conflict.id }}, версия {{ source_page }}
+    (автор: {{ source_version.author.nickname }})
+        </p>
+    </div>
+
+
+    {% if error %}
+        <div class="form-error">
+            {{ error }}
+        </div>
+    {% endif %}
+
+
+    <form
+        method="post"
+        action="{{ url_for(
+            'confirm.conflict_version',
+            conflict_id=conflict.id,
+            page=source_page,
+        ) }}"
+        class="game-form"
+        id="game-form"
+    >
+
+        <div class="form-group">
+            <label for="wargame" class="form-label">
+                Варгейм
+            </label>
+            <select
+                id="wargame"
+                name="wargame"
+                class="form-select"
+                required
+            >
+                <option value="">
+                    Выберите варгейм
+                </option>
+                {% for wargame in wargames %}
+                    <option value="{{ wargame.id }}">
+                        {{ wargame.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+
+        <div class="form-group">
+            <label for="edition" class="form-label">
+                Редакция
+            </label>
+            <select
+                id="edition"
+                name="edition"
+                class="form-select"
+                required
+                disabled
+            >
+                <option value="">
+                    Сначала выберите варгейм
+                </option>
+            </select>
+        </div>
+
+
+        <div class="form-group">
+            <label for="date" class="form-label">
+                Дата
+            </label>
+            <input
+                type="date"
+                id="date"
+                name="date"
+                class="form-input"
+                required
+            >
+        </div>
+
+
+        <div class="form-group">
+            <label for="roster_points" class="form-label">
+                Формат игры (в очках)
+            </label>
+            <input
+                type="number"
+                id="roster_points"
+                name="roster_points"
+                class="form-input"
+                min="1"
+                required
+            >
+        </div>
+
+
+        <div class="game-teams" id="game-teams">
+        </div>
+
+
+        <div class="form-actions">
+            <button
+                type="button"
+                id="add-team"
+                class="btn btn-secondary"
+            >
+                Добавить команду
+            </button>
+            <button
+                type="submit"
+                class="btn btn-primary"
+            >
+                Отправить версию
+            </button>
+        </div>
+
+    </form>
+
+</div>
+
+
+<script>
+    const editionsByWargame = {{ editions_by_wargame | tojson }};
+    const factionsByWargame = {{ factions_by_wargame | tojson }};
+    const formData = {{ form_data | tojson }};
+    const currentUserId = {{ current_user.id }};
+</script>
+
+<script
+    src="{{ url_for('static', filename='js/game_new.js') }}"
+></script>
+
+{% endblock %}

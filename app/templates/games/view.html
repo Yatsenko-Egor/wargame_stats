@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}
+Партия #{{ game.id }} — Wargame Stats
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page">
+
+    <div class="page-header">
+
+        <h1 class="page-title">
+            Партия #{{ game.id }}
+        </h1>
+
+        <p class="page-description">
+            {{ game.edition.wargame.name }}
+            /
+            {{ game.edition.edition_name }}
+        </p>
+
+        <div class="game-view-meta">
+
+            <span class="game-view-meta-item">
+                Дата: {{ game.date.strftime("%d.%m.%Y") }}
+            </span>
+
+            <span class="game-view-meta-item">
+                Формат игры (в очках): {{ game.roster_points }}
+            </span>
+
+            <span class="game-view-meta-item">
+                Статус: Официальная
+            </span>
+
+        </div>
+
+        <div class="game-view-actions">
+
+            <a
+                    href="{{ url_for(
+                    'profile.view',
+                    nickname=creator.nickname,
+                ) }}"
+                    class="btn btn-secondary btn-small"
+            >
+                Назад в профиль {{ creator.nickname }}
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <section class="game-view-teams">
+
+        <h2 class="profile-section-title">
+            Команды
+        </h2>
+
+        {% for team_data in teams_data %}
+
+        <div class="confirm-team">
+
+            <h3 class="confirm-team-title">
+                {{ team_data.team.name }}
+                —
+                {{ result_label(team_data.team.result) }}
+                {% if team_data.team.score is not none %}
+                ({{ team_data.team.score }})
+                {% endif %}
+            </h3>
+
+            <ul class="confirm-team-players">
+
+                {% for player_data in team_data.players %}
+
+                <li class="confirm-player">
+
+                    <a
+                            href="{{ url_for(
+                                    'profile.view',
+                                    nickname=player_data.player.nickname,
+                                ) }}"
+                            class="confirm-player-name"
+                    >
+                        {{ player_data.player.nickname }}
+                    </a>
+
+                    <span class="confirm-player-separator">
+        —
+    </span>
+
+                    <span class="confirm-player-factions">
+                                {% for faction in player_data.factions %}
+                                    {{ faction.faction_name }}{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            </span>
+
+                </li>
+
+                {% endfor %}
+
+            </ul>
+
+        </div>
+
+        {% endfor %}
+
+    </section>
+
+
+    <section class="confirm-reviews">
+
+        <h2 class="profile-section-title">
+            Отзывы
+        </h2>
+
+        {% if reviews %}
+
+        <ul class="profile-reviews-list">
+
+            {% for review in reviews %}
+
+            <li class="profile-review">
+
+                <div class="profile-review-header">
+
+                            <span class="profile-review-author">
+                                <a
+                                        href="{{ url_for(
+                                        'profile.view',
+                                        nickname=review.author_player.nickname,
+                                    ) }}"
+                                >
+                                    {{ review.author_player.nickname }}
+                                </a>
+                                →
+                                <a
+                                        href="{{ url_for(
+                                        'profile.view',
+                                        nickname=review.player.nickname,
+                                    ) }}"
+                                >
+                                    {{ review.player.nickname }}
+                                </a>
+                            </span>
+
+                    <span class="profile-review-rating">
+                                {{ review.rating }}
+                            </span>
+
+                    <span class="profile-review-date">
+                                {{ review.created_at.strftime("%d.%m.%Y") }}
+                            </span>
+
+                </div>
+
+                {% if review.text %}
+                <div class="profile-review-text">
+                    {{ review.text }}
+                </div>
+                {% endif %}
+
+            </li>
+
+            {% endfor %}
+
+        </ul>
+
+        {% else %}
+
+        <p class="profile-empty">
+            Нет отзывов.
+        </p>
+
+        {% endif %}
+
+    </section>
+
+</div>
+
+{% endblock %}

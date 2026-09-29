@@ -1,10 +1,320 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}
+Подтверждение #{{ conflict.id }} — Wargame Stats
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page">
+
+    <div class="page-header">
+        <h1 class="page-title">
+            Подтверждение #{{ conflict.id }}
+        </h1>
+        <p class="page-description">
+            Версия {{ current_page }} из {{ total_pages }}
+        </p>
+    </div>
+
+
+    <nav class="confirm-version-nav">
+
+        {% if current_page > 1 %}
+        <a
+                href="{{ url_for(
+                    'confirm.view',
+                    conflict_id=conflict.id,
+                    page=current_page - 1,
+                ) }}"
+                class="btn btn-secondary btn-small"
+        >
+            Предыдущая версия
+        </a>
+        {% endif %}
+
+        <span class="confirm-version-counter">
+            Версия {{ current_page }} из {{ total_pages }}
+            {% if current_version.is_original %}
+                (оригинал)
+            {% endif %}
+        </span>
+
+        {% if current_page < total_pages %}
+        <a
+                href="{{ url_for(
+                    'confirm.view',
+                    conflict_id=conflict.id,
+                    page=current_page + 1,
+                ) }}"
+                class="btn btn-secondary btn-small"
+        >
+            Следующая версия
+        </a>
+        {% endif %}
+
+    </nav>
+
+
+    <section class="confirm-version-info">
+
+        <p>
+            Автор версии:
+            <strong>{{ current_version.author.nickname }}</strong>
+        </p>
+
+        <p>
+            Создана:
+            {{ current_version.game.created_at.strftime("%d.%m.%Y %H:%M") }}
+        </p>
+
+        <p>
+            Статус:
+            <strong>{{ status_label }}</strong>
+        </p>
+
+        {% if response_label %}
+        <p>
+            Ваш ответ:
+            <strong>{{ response_label }}</strong>
+        </p>
+        {% endif %}
+
+    </section>
+
+
+    <section class="confirm-game-data">
+
+        <h2 class="profile-section-title">
+            Данные партии
+        </h2>
+
+        <p>
+            Варгейм:
+            {{ version_data.game.edition.wargame.name }}
+            /
+            {{ version_data.game.edition.edition_name }}
+        </p>
+
+        <p>
+            Дата: {{ version_data.game.date.strftime("%d.%m.%Y") }}
+        </p>
+
+        <p>
+            Формат игры (в очках): {{ version_data.game.roster_points }}
+        </p>
+
+
+        {% for team_data in version_data.teams %}
+
+        <div class="confirm-team">
+
+            <h3 class="confirm-team-title">
+                {{ team_data.team.name }}
+                —
+                {{ result_label(team_data.team.result) }}
+                {% if team_data.team.score is not none %}
+                ({{ team_data.team.score }})
+                {% endif %}
+            </h3>
+
+            <ul class="confirm-team-players">
+
+                {% for player_data in team_data.players %}
+
+                <li class="confirm-player">
+
+                            <span class="confirm-player-name">
+                                {{ player_data.player.nickname }} -
+                            </span>
+
+                    <span class="confirm-player-factions">
+                                {% for faction in player_data.factions %}
+                                    {{ faction.faction_name }}{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            </span>
+
+                </li>
+
+                {% endfor %}
+
+            </ul>
+
+        </div>
+
+        {% endfor %}
+
+    </section>
+
+
+    {% if can_act %}
+
+    <section class="confirm-actions">
+
+        <form
+                method="post"
+                action="{{ url_for(
+                    'confirm.confirm_version',
+                    conflict_id=conflict.id,
+                ) }}"
+                class="confirm-action-form"
+        >
+            <input
+                    type="hidden"
+                    name="version"
+                    value="{{ current_version.game.id }}"
+            >
+            <button
+                    type="submit"
+                    class="btn btn-primary"
+            >
+                Подтвердить эту версию
+            </button>
+        </form>
+
+
+        <a
+                href="{{ url_for(
+                    'confirm.conflict_version',
+                    conflict_id=conflict.id,
+                    page=current_page,
+                ) }}"
+                class="btn btn-secondary"
+        >
+            Оспорить эту версию
+        </a>
+
+    </section>
+
+    {% endif %}
+
+
+    <section class="confirm-reviews">
+
+        <h2 class="profile-section-title">
+            Ваши отзывы
+        </h2>
+
+        {% if review_targets %}
+
+        <ul class="profile-reviews-list">
+
+            {% for target in review_targets %}
+
+            {% set target_player = target.player %}
+            {% set existing_review = target.review %}
+
+            <li class="profile-review">
+
+                <div class="profile-review-header">
+                            <span class="profile-review-author">
+                                 Отзыв на {{ target_player.nickname }}
+                            </span>
+
+                    {% if existing_review %}
+                    <span class="profile-review-rating">
+                                    {{ existing_review.rating }}
+                                </span>
+                    <span class="profile-review-date">
+                                    {{ existing_review.created_at.strftime("%d.%m.%Y") }}
+                                </span>
+                    {% else %}
+                    <span class="profile-review-status">
+                                    Отзыв не оставлен
+                                </span>
+                    {% endif %}
+                </div>
+
+                {% if existing_review %}
+
+                {% if existing_review.text %}
+                <div class="profile-review-text">
+                    {{ existing_review.text }}
+                </div>
+                {% endif %}
+
+                {% else %}
+
+                <form
+                        method="post"
+                        action="{{ url_for(
+                                    'confirm.add_review',
+                                    conflict_id=conflict.id,
+                                ) }}"
+                        class="review-inline-form"
+                >
+
+                    <input
+                            type="hidden"
+                            name="player_id"
+                            value="{{ target_player.id }}"
+                    >
+
+                    <div class="review-inline-fields">
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Оценка
+                            </label>
+                            <select
+                                    name="rating"
+                                    class="form-select"
+                                    required
+                            >
+                                <option value="">
+                                    —
+                                </option>
+                                <option value="5">5</option>
+                                <option value="4">4</option>
+                                <option value="3">3</option>
+                                <option value="2">2</option>
+                                <option value="1">1</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group review-inline-text">
+                            <label class="form-label">
+                                Комментарий
+                            </label>
+                            <textarea
+                                    name="text"
+                                    class="form-input"
+                                    rows="2"
+                            ></textarea>
+                        </div>
+
+                    </div>
+
+                    <div class="review-inline-actions">
+                        <button
+                                type="submit"
+                                class="btn btn-primary btn-small"
+                        >
+                            Оставить отзыв
+                        </button>
+                    </div>
+
+                </form>
+
+                {% endif %}
+
+            </li>
+
+            {% endfor %}
+
+        </ul>
+
+        {% else %}
+
+        <p class="profile-empty">
+            Нет участников для отзыва.
+        </p>
+
+        {% endif %}
+
+    </section>
+
+</div>
+
+{% endblock %}
