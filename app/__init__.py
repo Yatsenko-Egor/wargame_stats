@@ -7,6 +7,8 @@ from app.profile import profile_bp
 from app.auth.session import get_current_user
 from app.games import games_bp
 from app.confirm import confirm_bp
+from app.statistics import statistics_bp
+from app.players import players_bp
 
 
 def create_app():
@@ -21,6 +23,8 @@ def create_app():
     app.register_blueprint(profile_bp)
     app.register_blueprint(games_bp)
     app.register_blueprint(confirm_bp)
+    app.register_blueprint(statistics_bp)
+    app.register_blueprint(players_bp)
 
     @app.before_request
     def load_current_user():

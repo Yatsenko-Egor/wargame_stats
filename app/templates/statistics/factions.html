@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Статистика по фракциям — Wargame Stats
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page">
+
+    <div class="page-header">
+        <h1 class="page-title">
+            Статистика по фракциям
+        </h1>
+    </div>
+
+
+    <nav class="statistics-tabs">
+
+        <a
+            href="{{ url_for('statistics.wargames') }}"
+            class="statistics-tab"
+        >
+            Варгеймы
+        </a>
+
+        <a
+            href="{{ url_for('statistics.factions') }}"
+            class="statistics-tab statistics-tab--active"
+        >
+            Фракции
+        </a>
+
+    </nav>
+
+
+    <form
+        method="get"
+        action="{{ url_for('statistics.factions') }}"
+        class="statistics-filter-row"
+    >
+
+        <div class="statistics-filter-field">
+            <label
+                for="wargame"
+                class="form-label"
+            >
+                Варгейм
+            </label>
+            <select
+                id="wargame"
+                name="wargame"
+                class="form-select"
+                onchange="this.form.submit()"
+            >
+                {% for wargame in wargames %}
+                    <option
+                        value="{{ wargame.id }}"
+                        {% if wargame.id == selected_wargame_id %}selected{% endif %}
+                    >
+                        {{ wargame.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+
+        <div class="statistics-filter-field">
+            <label
+                for="edition"
+                class="form-label"
+            >
+                Редакция
+            </label>
+            <select
+                id="edition"
+                name="edition"
+                class="form-select"
+                onchange="this.form.submit()"
+            >
+                <option
+                    value=""
+                    {% if selected_edition_id is none %}selected{% endif %}
+                >
+                    Все редакции
+                </option>
+
+                {% for edition in available_editions %}
+                    <option
+                        value="{{ edition.id }}"
+                        {% if edition.id == selected_edition_id %}selected{% endif %}
+                    >
+                        {{ edition.edition_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+    </form>
+
+
+    {% if rows %}
+
+        <table class="statistics-factions-table">
+
+            <thead>
+                <tr>
+                    <th>Фракция</th>
+                    <th>Партий</th>
+                    <th>Побед</th>
+                    <th>% побед</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <td>{{ row.faction_names }}</td>
+                        <td>{{ row.game_count }}</td>
+                        <td>{{ row.wins }}</td>
+                        <td>{{ row.win_rate }}%</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    
+
+    {% else %}
+
+        <p class="profile-empty">
+            Нет статистики по фракциям для выбранного варгейма.
+        </p>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

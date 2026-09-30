@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}
+Статистика по варгеймам — Wargame Stats
+{% endblock %}
+
+
+{% block content %}
+
+
+<div class="page">
+
+    <div class="page-header">
+        <h1 class="page-title">
+            Статистика по варгеймам
+        </h1>
+    </div>
+
+    <nav class="statistics-tabs">
+
+        <a
+                href="{{ url_for('statistics.wargames') }}"
+                class="statistics-tab statistics-tab--active"
+        >
+            Варгеймы
+        </a>
+
+        <a
+                href="{{ url_for('statistics.factions') }}"
+                class="statistics-tab"
+        >
+            Фракции
+        </a>
+
+    </nav>
+
+    <section class="statistics-filters">
+
+        <div class="statistics-period-buttons">
+
+            <a
+                    href="{{ url_for(
+            'statistics.wargames',
+            date_from=prev_week_start,
+            date_to=prev_week_end,
+        ) }}"
+                    class="statistics-period-button {% if active_period == 'prev_week' %}statistics-period-button--active{% endif %}"
+            >
+                Прошлая неделя
+            </a>
+
+            <a
+                    href="{{ url_for(
+            'statistics.wargames',
+            date_from=this_month_start,
+            date_to=today,
+        ) }}"
+                    class="statistics-period-button {% if active_period == 'this_month' %}statistics-period-button--active{% endif %}"
+            >
+                Этот месяц
+            </a>
+
+            <a
+                    href="{{ url_for(
+            'statistics.wargames',
+            date_from=this_year_start,
+            date_to=today,
+        ) }}"
+                    class="statistics-period-button {% if active_period == 'this_year' %}statistics-period-button--active{% endif %}"
+            >
+                Этот год
+            </a>
+
+            <a
+                    href="{{ url_for('statistics.wargames') }}"
+                    class="statistics-period-button {% if active_period == 'all_time' %}statistics-period-button--active{% endif %}"
+            >
+                Всё время
+            </a>
+
+        </div>
+
+        <form
+                method="get"
+                action="{{ url_for('statistics.wargames') }}"
+                class="statistics-custom-range"
+        >
+
+            <div class="statistics-custom-range-field">
+                <label for="date_from" class="form-label">
+                    С
+                </label>
+                <input
+                        type="date"
+                        id="date_from"
+                        name="date_from"
+                        class="form-input"
+                        value="{{ date_from or '' }}"
+                >
+            </div>
+
+            <div class="statistics-custom-range-field">
+                <label for="date_to" class="form-label">
+                    По
+                </label>
+                <input
+                        type="date"
+                        id="date_to"
+                        name="date_to"
+                        class="form-input"
+                        value="{{ date_to or '' }}"
+                >
+            </div>
+
+            <div class="statistics-custom-range-field">
+                <button
+                        type="submit"
+                        class="btn btn-primary btn-small"
+                >
+                    Применить
+                </button>
+            </div>
+
+        </form>
+
+    </section>
+
+
+    {% if rows %}
+
+    <ul class="statistics-list">
+
+        {% for row in rows %}
+
+        <li class="statistics-row">
+
+            <div class="statistics-row-name">
+                {{ row.wargame_name }}
+            </div>
+
+            <div class="statistics-bar">
+                <div
+                        class="statistics-bar-fill"
+                        style="width: {{ row.percentage }}%;"
+                ></div>
+            </div>
+
+            <div class="statistics-row-count">
+                {{ row.game_count }}
+            </div>
+
+        </li>
+
+        {% endfor %}
+
+    </ul>
+
+
+    <p class="statistics-total">
+        Всего партий: {{ total_games }}
+    </p>
+
+    {% else %}
+
+    <p class="profile-empty">
+        Нет партий за выбранный период.
+    </p>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

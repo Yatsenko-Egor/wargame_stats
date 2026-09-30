@@ -1392,3 +1392,480 @@ select {
 
     font-weight: 600;
 }
+
+/* =========================
+   STATISTICS FILTERS
+   ========================= */
+
+.statistics-filters {
+    margin-bottom: 40px;
+}
+
+
+.statistics-period-buttons {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 8px;
+
+    margin-bottom: 20px;
+}
+
+
+.statistics-period-button {
+    padding: 8px 16px;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+
+    background-color: transparent;
+
+    color: var(--color-gray-light);
+
+    font-size: 14px;
+
+    transition:
+        border-color 0.15s ease,
+        color 0.15s ease,
+        background-color 0.15s ease;
+}
+
+
+.statistics-period-button:hover {
+    border-color: var(--color-gray);
+
+    color: var(--color-white);
+}
+
+
+.statistics-period-button--active {
+    border-color: var(--color-primary);
+
+    background-color: var(--color-primary);
+
+    color: var(--color-white);
+
+    font-weight: 600;
+}
+
+
+.statistics-period-button--active:hover {
+    border-color: var(--color-primary-hover);
+
+    background-color: var(--color-primary-hover);
+
+    color: var(--color-white);
+}
+
+
+.statistics-custom-range {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 12px;
+
+    align-items: flex-end;
+}
+
+
+.statistics-custom-range-field {
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+}
+
+
+.statistics-custom-range-field .form-input {
+    width: auto;
+
+    min-width: 160px;
+}
+
+
+/* =========================
+   STATISTICS LIST
+   ========================= */
+
+.statistics-list {
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+}
+
+
+.statistics-row {
+    display: grid;
+
+    grid-template-columns: 240px minmax(0, 1fr) 60px;
+
+    gap: 18px;
+
+    align-items: center;
+
+    padding: 12px 0;
+
+    border-bottom: 1px solid var(--color-border);
+}
+
+
+.statistics-row:last-child {
+    border-bottom: none;
+}
+
+
+.statistics-row-name {
+    color: var(--color-white);
+
+    font-size: 15px;
+
+    font-weight: 500;
+}
+
+
+.statistics-bar {
+    width: 100%;
+
+    height: 18px;
+
+    border-radius: var(--radius);
+
+    background-color: var(--color-background-light);
+
+    overflow: hidden;
+}
+
+
+.statistics-bar-fill {
+    height: 100%;
+
+    background-color: #6FCF97;
+
+    border-radius: var(--radius);
+
+    min-width: 0;
+
+    transition: width 0.3s ease;
+}
+
+
+.statistics-row-count {
+    color: var(--color-white);
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    text-align: right;
+}
+
+
+.statistics-total {
+    margin-top: 24px;
+
+    color: var(--color-gray-light);
+
+    font-size: 14px;
+
+    text-align: right;
+}
+
+
+/* =========================
+   STATISTICS RESPONSIVE
+   ========================= */
+
+@media (max-width: 700px) {
+
+    .statistics-row {
+        grid-template-columns: 1fr 50px;
+
+        gap: 12px;
+
+        row-gap: 6px;
+    }
+
+
+    .statistics-row-name {
+        grid-column: 1 / -1;
+
+        font-size: 14px;
+    }
+
+
+    .statistics-bar {
+        height: 14px;
+    }
+
+
+    .statistics-row-count {
+        font-size: 14px;
+    }
+
+
+    .statistics-custom-range {
+        flex-direction: column;
+
+        align-items: stretch;
+    }
+
+
+    .statistics-custom-range-field .form-input {
+        width: 100%;
+
+        min-width: 0;
+    }
+
+}
+
+/* =========================
+   STATISTICS TABS
+   ========================= */
+
+.statistics-tabs {
+    display: flex;
+
+    gap: 4px;
+
+    margin-bottom: 24px;
+
+    border-bottom: 1px solid var(--color-border);
+}
+
+
+.statistics-tab {
+    padding: 10px 18px;
+
+    border-bottom: 2px solid transparent;
+
+    color: var(--color-gray-light);
+
+    font-size: 14px;
+    font-weight: 500;
+
+    transition:
+        border-color 0.15s ease,
+        color 0.15s ease;
+}
+
+
+.statistics-tab:hover {
+    color: var(--color-white);
+}
+
+
+.statistics-tab--active {
+    border-bottom-color: var(--color-primary);
+
+    color: var(--color-white);
+
+    font-weight: 600;
+}
+
+
+/* =========================
+   STATISTICS FILTER ROW
+   ========================= */
+
+.statistics-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 16px;
+
+    margin-bottom: 28px;
+}
+
+
+.statistics-filter-field {
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+
+    min-width: 240px;
+}
+
+
+.statistics-filter-field .form-select {
+    width: 100%;
+}
+
+
+/* =========================
+   STATISTICS FACTIONS TABLE
+   ========================= */
+
+.statistics-factions-table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    font-size: 14px;
+}
+
+
+.statistics-factions-table th,
+.statistics-factions-table td {
+    padding: 12px 14px;
+
+    border-bottom: 1px solid var(--color-border);
+
+    text-align: left;
+
+    vertical-align: top;
+}
+
+
+.statistics-factions-table th {
+    color: var(--color-gray-light);
+
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+
+.statistics-factions-table tr:hover td {
+    background-color: var(--color-background-light);
+}
+
+
+.statistics-factions-table th:nth-child(2),
+.statistics-factions-table th:nth-child(3),
+.statistics-factions-table th:nth-child(4),
+.statistics-factions-table td:nth-child(2),
+.statistics-factions-table td:nth-child(3),
+.statistics-factions-table td:nth-child(4) {
+    text-align: right;
+}
+
+
+/* =========================
+   STATISTICS TABS RESPONSIVE
+   ========================= */
+
+@media (max-width: 700px) {
+
+    .statistics-filter-field {
+        min-width: 100%;
+    }
+
+
+    .statistics-factions-table {
+        font-size: 13px;
+    }
+
+
+    .statistics-factions-table th,
+    .statistics-factions-table td {
+        padding: 9px 10px;
+    }
+
+}
+
+/* =========================
+   PLAYERS FILTERS
+   ========================= */
+
+.players-filters {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 16px;
+
+    align-items: flex-end;
+
+    margin-bottom: 28px;
+}
+
+
+.players-filter-field {
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+}
+
+
+.players-filter-field .form-input,
+.players-filter-field .form-select {
+    min-width: 220px;
+}
+
+
+/* =========================
+   PLAYERS TABLE
+   ========================= */
+
+.players-table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    font-size: 14px;
+}
+
+
+.players-table th,
+.players-table td {
+    padding: 12px 14px;
+
+    border-bottom: 1px solid var(--color-border);
+
+    text-align: left;
+
+    vertical-align: top;
+}
+
+
+.players-table th {
+    color: var(--color-gray-light);
+
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+
+.players-table tr:hover td {
+    background-color: var(--color-background-light);
+}
+
+
+.players-table th:last-child,
+.players-table td:last-child {
+    text-align: right;
+}
+
+
+/* =========================
+   PLAYERS RESPONSIVE
+   ========================= */
+
+@media (max-width: 700px) {
+
+    .players-filter-field .form-input,
+    .players-filter-field .form-select {
+        min-width: 100%;
+        width: 100%;
+    }
+
+
+    .players-filter-field {
+        width: 100%;
+    }
+
+
+    .players-table {
+        font-size: 13px;
+    }
+
+
+    .players-table th,
+    .players-table td {
+        padding: 9px 10px;
+    }
+
+}
