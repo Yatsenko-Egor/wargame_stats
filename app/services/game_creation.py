@@ -2,10 +2,12 @@ import re
 
 from app.extensions import db
 from app.models import (
+    Faction,
     FactionList,
     FactionListFaction,
+    Wargame,
+    WargameEdition,
 )
-
 
 TEAM_PATTERN = re.compile(
     r"^teams\[(\d+)\]\[(\w+)\]"
@@ -158,3 +160,58 @@ def find_or_create_faction_list(faction_ids):
         )
 
     return faction_list.id
+
+
+
+def load_form_context():
+    wargames = (
+        Wargame.query
+        .order_by(Wargame.name)
+        .all()
+    )
+
+    editions = (
+        WargameEdition.query
+        .order_by(
+            WargameEdition.wargame_id,
+            WargameEdition.id,
+        )
+        .all()
+    )
+
+    editions_by_wargame = {}
+
+    for edition in editions:
+        editions_by_wargame.setdefault(
+            edition.wargame_id,
+            [],
+        ).append({
+            "id": edition.id,
+            "edition_name": edition.edition_name,
+        })
+
+    factions = (
+        Faction.query
+        .order_by(
+            Faction.wargame_id,
+            Faction.faction_name,
+        )
+        .all()
+    )
+
+    factions_by_wargame = {}
+
+    for faction in factions:
+        factions_by_wargame.setdefault(
+            faction.wargame_id,
+            [],
+        ).append({
+            "id": faction.id,
+            "faction_name": faction.faction_name,
+        })
+
+    return {
+        "wargames": wargames,
+        "editions_by_wargame": editions_by_wargame,
+        "factions_by_wargame": factions_by_wargame,
+    }

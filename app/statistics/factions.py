@@ -3,13 +3,13 @@ from flask import render_template, request
 from app.extensions import db
 from app.models import (
     Faction,
-    FactionList,
     FactionListFaction,
     PlayerFactionStatistics,
     Wargame,
     WargameEdition,
 )
 from app.statistics import statistics_bp
+from app.services.game_data import load_faction_list_members
 
 
 @statistics_bp.route("/factions")
@@ -137,27 +137,3 @@ def load_faction_stats(wargame_id, edition_id):
     )
 
     return rows
-
-
-def load_faction_list_members(faction_list_ids):
-    if not faction_list_ids:
-        return {}
-
-    items = (
-        db.session.query(
-            FactionListFaction.faction_list_id,
-            Faction,
-        )
-        .join(Faction, Faction.id == FactionListFaction.faction_id)
-        .filter(
-            FactionListFaction.faction_list_id.in_(faction_list_ids)
-        )
-        .all()
-    )
-
-    result = {}
-
-    for faction_list_id, faction in items:
-        result.setdefault(faction_list_id, []).append(faction)
-
-    return result

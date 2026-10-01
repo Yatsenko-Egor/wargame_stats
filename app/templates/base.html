@@ -30,6 +30,12 @@
                 Игроки
             </a>
 
+            {% if current_user and current_user.role in ("MODERATOR", "ADMIN") %}
+            <a href="{{ url_for('moderation.index') }}">
+                Модерация
+            </a>
+            {% endif %}
+
 
             {% if current_user %}
             <a

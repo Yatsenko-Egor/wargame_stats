@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Партия в работе — Wargame Stats
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page">
+
+    <div class="page-header">
+        <h1 class="page-title">
+            Эту партию сейчас просматривает другой модератор
+        </h1>
+    </div>
+
+
+    <div class="moderation-locked">
+
+        <div class="moderation-locked-info">
+
+            <p>
+                Модератор:
+                <strong>{{ viewer.nickname }}</strong>
+            </p>
+
+            <p>
+                Начато:
+                {{ viewed_at.strftime("%d.%m.%Y %H:%M:%S") }}
+            </p>
+
+            <p class="moderation-locked-hint">
+                Партия станет доступной после
+                последнего действий этого модератора
+            </p>
+
+        </div>
+
+
+        <div class="moderation-locked-actions">
+
+            <a
+                href="{{ url_for(
+                    'moderation.conflict_view',
+                    conflict_id=conflict.id,
+                ) }}"
+                class="btn btn-primary"
+            >
+                Обновить
+            </a>
+
+            <a
+                href="{{ url_for('moderation.index') }}"
+                class="btn btn-secondary"
+            >
+                Назад к списку
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

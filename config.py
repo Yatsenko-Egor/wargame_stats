@@ -19,3 +19,5 @@ class Config:
         "pool_pre_ping": True,
         "pool_recycle": 280,
     }
+
+    MODERATION_LOCK_TIMEOUT = 90

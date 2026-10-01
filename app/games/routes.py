@@ -1,5 +1,3 @@
-import re
-
 from datetime import datetime
 
 from flask import (
@@ -15,30 +13,26 @@ from flask import (
 from app.auth.decorators import login_required
 from app.extensions import db
 from app.games import games_bp
-from app.games.services import (
+from app.services.game_creation import (
     build_form_snapshot,
     find_or_create_faction_list,
-    form_to_json,
+    load_form_context,
     parse_teams_form,
 )
 from app.models import (
     Faction,
-    FactionList,
-    FactionListFaction,
     Game,
     GameConfirmation,
     GameConflict,
     GameFaction,
     GameVersion,
     Player,
-    PlayerFaction,
     PlayerGame,
-    Review,
     Team,
     Wargame,
     WargameEdition,
 )
-
+from app.services.game_data import load_version_data, load_game_reviews
 
 RESULT_LABELS = {
     "WIN": "Победа",
@@ -52,60 +46,6 @@ def result_label(value):
         return "—"
 
     return RESULT_LABELS.get(value, value)
-
-
-def load_form_context():
-    wargames = (
-        Wargame.query
-        .order_by(Wargame.name)
-        .all()
-    )
-
-    editions = (
-        WargameEdition.query
-        .order_by(
-            WargameEdition.wargame_id,
-            WargameEdition.id,
-        )
-        .all()
-    )
-
-    editions_by_wargame = {}
-
-    for edition in editions:
-        editions_by_wargame.setdefault(
-            edition.wargame_id,
-            [],
-        ).append({
-            "id": edition.id,
-            "edition_name": edition.edition_name,
-        })
-
-    factions = (
-        Faction.query
-        .order_by(
-            Faction.wargame_id,
-            Faction.faction_name,
-        )
-        .all()
-    )
-
-    factions_by_wargame = {}
-
-    for faction in factions:
-        factions_by_wargame.setdefault(
-            faction.wargame_id,
-            [],
-        ).append({
-            "id": faction.id,
-            "faction_name": faction.faction_name,
-        })
-
-    return {
-        "wargames": wargames,
-        "editions_by_wargame": editions_by_wargame,
-        "factions_by_wargame": factions_by_wargame,
-    }
 
 
 def render_new_form(error=None, form_data=None):
@@ -556,90 +496,14 @@ def view(game_id):
     if game.status != "OFFICIAL":
         abort(404)
 
-    teams_data = load_game_data(game)
+    version_data = load_version_data(game)
     reviews = load_game_reviews(game)
 
     return render_template(
         "games/view.html",
         game=game,
-        teams_data=teams_data,
+        version_data=version_data,
         reviews=reviews,
         creator=game.creator,
         result_label=result_label,
-    )
-
-
-def load_game_data(game):
-    teams = (
-        Team.query
-        .filter(Team.game_id == game.id)
-        .order_by(Team.command_number)
-        .all()
-    )
-
-    team_ids = [team.id for team in teams]
-
-    players_by_team = {}
-
-    if team_ids:
-        player_games = (
-            PlayerGame.query
-            .filter(PlayerGame.team_id.in_(team_ids))
-            .all()
-        )
-
-        for player_game in player_games:
-            players_by_team.setdefault(
-                player_game.team_id,
-                [],
-            ).append(player_game)
-
-    factions_by_player_game = {}
-
-    player_game_ids = [
-        pg.id
-        for list_ in players_by_team.values()
-        for pg in list_
-    ]
-
-    if player_game_ids:
-        game_factions = (
-            GameFaction.query
-            .filter(GameFaction.player_game_id.in_(player_game_ids))
-            .all()
-        )
-
-        for game_faction in game_factions:
-            factions_by_player_game.setdefault(
-                game_faction.player_game_id,
-                [],
-            ).append(game_faction.faction)
-
-    teams_data = []
-
-    for team in teams:
-        players_data = []
-
-        for player_game in players_by_team.get(team.id, []):
-            players_data.append({
-                "player": player_game.player,
-                "factions": factions_by_player_game.get(
-                    player_game.id, []
-                ),
-            })
-
-        teams_data.append({
-            "team": team,
-            "players": players_data,
-        })
-
-    return teams_data
-
-
-def load_game_reviews(game):
-    return (
-        Review.query
-        .filter(Review.game_id == game.id)
-        .order_by(Review.created_at.desc())
-        .all()
     )

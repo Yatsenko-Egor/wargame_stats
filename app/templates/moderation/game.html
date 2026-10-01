@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Модерация партии #{{ game.id }} — Wargame Stats
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page">
+
+    <div class="page-header">
+        <h1 class="page-title">
+            Партия #{{ game.id }}
+        </h1>
+        <p class="page-description">
+            {{ status_label }}
+        </p>
+    </div>
+
+
+    <section class="confirm-version-info">
+
+        <p>
+            Создатель:
+            <strong>{{ game.creator.nickname }}</strong>
+        </p>
+
+        <p>
+            Дата:
+            {{ game.date.strftime("%d.%m.%Y") }}
+        </p>
+
+    </section>
+
+
+    {% include "_game_version_data.html" %}
+
+
+    <section class="moderation-actions">
+
+        {% if game.status == "OFFICIAL" %}
+            <form
+                method="post"
+                action="{{ url_for(
+                    'moderation.cancel_game_view',
+                    game_id=game.id,
+                ) }}"
+                class="moderation-action-form"
+            >
+                <button
+                    type="submit"
+                    class="btn btn-secondary"
+                >
+                    Отменить партию
+                </button>
+            </form>
+        {% elif game.status == "CANCELLED" %}
+            <form
+                method="post"
+                action="{{ url_for(
+                    'moderation.restore_game_view',
+                    game_id=game.id,
+                ) }}"
+                class="moderation-action-form"
+            >
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    Восстановить партию
+                </button>
+            </form>
+        {% endif %}
+
+
+        <a
+            href="{{ url_for('moderation.index') }}"
+            class="btn btn-secondary"
+        >
+            Назад к списку
+        </a>
+
+    </section>
+
+
+    <section class="confirm-reviews">
+
+        <h2 class="profile-section-title">
+            Отзывы
+        </h2>
+
+        {% if reviews %}
+
+            <ul class="profile-reviews-list">
+
+                {% for review in reviews %}
+
+                    <li class="profile-review">
+
+                        <div class="profile-review-header">
+                            <span class="profile-review-author">
+                                {{ review.author_player.nickname }}
+                                →
+                                {{ review.player.nickname }}
+                            </span>
+                            <span class="profile-review-rating">
+                                {{ review.rating }}
+                            </span>
+                            <span class="profile-review-date">
+                                {{ review.created_at.strftime("%d.%m.%Y") }}
+                            </span>
+                        </div>
+
+                        {% if review.text %}
+                            <div class="profile-review-text">
+                                {{ review.text }}
+                            </div>
+                        {% endif %}
+
+                        <form
+                            method="post"
+                            action="{{ url_for(
+                                'moderation.clear_review_view',
+                                review_id=review.id,
+                            ) }}"
+                            class="review-clear-form"
+                        >
+                            <input
+                                type="hidden"
+                                name="next"
+                                value="{{ request.full_path }}"
+                            >
+                            <button
+                                type="submit"
+                                class="btn btn-secondary btn-small"
+                            >
+                                Очистить текст
+                            </button>
+                        </form>
+
+                    </li>
+
+                {% endfor %}
+
+            </ul>
+
+        {% else %}
+
+            <p class="profile-empty">
+                Отзывов по этой партии нет.
+            </p>
+
+        {% endif %}
+
+    </section>
+
+</div>
+
+{% endblock %}

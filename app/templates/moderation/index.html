@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Модерация — Wargame Stats
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page">
+
+    <div class="page-header">
+        <h1 class="page-title">
+            Модерация
+        </h1>
+    </div>
+
+
+    <section class="moderation-section">
+
+        <h2 class="profile-section-title">
+            Ожидают решения
+        </h2>
+
+        {% if conflicts %}
+
+            <table class="moderation-games-table">
+
+                <thead>
+                    <tr>
+                        <th>Участники</th>
+                        <th>Дата</th>
+                        <th>Варгейм / Редакция</th>
+                        <th>Версий</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for conflict in conflicts %}
+                        <tr>
+                            <td>
+                                <a
+                                    href="{{ url_for(
+                                        'moderation.conflict_view',
+                                        conflict_id=conflict.id,
+                                    ) }}"
+                                >
+                                    {{ conflict.participants | join(", ") }}
+                                </a>
+                            </td>
+                            <td>
+                                {{ conflict.date.strftime("%d.%m.%Y") }}
+                            </td>
+                            <td>
+                                {{ conflict.wargame_name }}
+                                /
+                                {{ conflict.edition_name }}
+                            </td>
+                            <td>
+                                {{ conflict.versions_count }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+
+
+            {% if conflicts_pages > 1 %}
+
+                <nav class="profile-pagination">
+
+                    {% for page_number in range(1, conflicts_pages + 1) %}
+
+                        {% if page_number == conflicts_page %}
+
+                            <span class="profile-pagination-current">
+                                {{ page_number }}
+                            </span>
+
+                        {% else %}
+
+                            <a
+                                href="{{ url_for(
+                                    'moderation.index',
+                                    conflicts_page=page_number,
+                                    games_page=games_page,
+                                ) }}"
+                                class="profile-pagination-link"
+                            >
+                                {{ page_number }}
+                            </a>
+
+                        {% endif %}
+
+                    {% endfor %}
+
+                </nav>
+
+            {% endif %}
+
+        {% else %}
+
+            <p class="profile-empty">
+                Партий, требующих решения, нет.
+            </p>
+
+        {% endif %}
+
+    </section>
+
+
+    <section class="moderation-section">
+
+        <h2 class="profile-section-title">
+            Последние партии
+        </h2>
+
+        {% if games %}
+
+            <table class="moderation-games-table">
+
+                <thead>
+                    <tr>
+                        <th>Участники</th>
+                        <th>Дата</th>
+                        <th>Варгейм / Редакция</th>
+                        <th>Создатель</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for game in games %}
+                        <tr>
+                            <td>
+                                <a
+                                    href="{{ url_for(
+                                        'moderation.game_view',
+                                        game_id=game.id,
+                                    ) }}"
+                                >
+                                    {{ game.participants | join(", ") }}
+                                </a>
+                            </td>
+                            <td>
+                                {{ game.date.strftime("%d.%m.%Y") }}
+                            </td>
+                            <td>
+                                {{ game.wargame_name }}
+                                /
+                                {{ game.edition_name }}
+                            </td>
+                            <td>
+                                {{ game.creator_nickname }}
+                            </td>
+                            <td>
+                                {% if game.status == "OFFICIAL" %}
+                                    Официальная
+                                {% elif game.status == "CANCELLED" %}
+                                    Неофициальная
+                                {% else %}
+                                    {{ game.status }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+
+
+            {% if games_pages > 1 %}
+
+                <nav class="profile-pagination">
+
+                    {% for page_number in range(1, games_pages + 1) %}
+
+                        {% if page_number == games_page %}
+
+                            <span class="profile-pagination-current">
+                                {{ page_number }}
+                            </span>
+
+                        {% else %}
+
+                            <a
+                                href="{{ url_for(
+                                    'moderation.index',
+                                    conflicts_page=conflicts_page,
+                                    games_page=page_number,
+                                ) }}"
+                                class="profile-pagination-link"
+                            >
+                                {{ page_number }}
+                            </a>
+
+                        {% endif %}
+
+                    {% endfor %}
+
+                </nav>
+
+            {% endif %}
+
+        {% else %}
+
+            <p class="profile-empty">
+                Официальных или отменённых партий нет.
+            </p>
+
+        {% endif %}
+
+    </section>
+
+</div>
+
+{% endblock %}

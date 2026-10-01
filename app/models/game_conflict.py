@@ -24,6 +24,18 @@ class GameConflict(db.Model):
         ),
         nullable=False,
     )
+    viewed_by = db.Column(
+        db.BigInteger,
+        db.ForeignKey(
+            "player.id",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+    )
+    viewed_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=True,
+    )
     created_at = db.Column(
         db.DateTime(timezone=True),
         nullable=False,
@@ -43,6 +55,12 @@ class GameConflict(db.Model):
     original_game = db.relationship(
         "Game",
         foreign_keys=[original_game_id],
+        viewonly=True,
+    )
+
+    viewer = db.relationship(
+        "Player",
+        foreign_keys=[viewed_by],
         viewonly=True,
     )
 

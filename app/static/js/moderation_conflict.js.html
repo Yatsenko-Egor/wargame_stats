@@ -1,0 +1,31 @@
+document.addEventListener("DOMContentLoaded", () => {
+
+    const conflictId = window.MODERATION_CONFLICT_ID;
+
+    if (!conflictId) {
+        return;
+    }
+
+    const heartbeatUrl = `/moderation/${conflictId}/heartbeat`;
+    const releaseUrl = `/moderation/${conflictId}/release`;
+
+    const HEARTBEAT_INTERVAL = 30000;
+
+
+    setInterval(() => {
+        fetch(heartbeatUrl, {
+            method: "POST",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+            },
+        }).catch(() => {
+            // ignore network errors
+        });
+    }, HEARTBEAT_INTERVAL);
+
+
+    window.addEventListener("beforeunload", () => {
+        navigator.sendBeacon(releaseUrl);
+    });
+
+});

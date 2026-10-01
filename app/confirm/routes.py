@@ -13,11 +13,22 @@ from flask import (
 from app.auth.decorators import login_required
 from app.confirm import confirm_bp
 from app.extensions import db
-from app.games.services import (
+from app.services.game_creation import (
     build_form_snapshot,
     find_or_create_faction_list,
     form_to_json,
+    load_form_context,
     parse_teams_form,
+)
+from app.services.game_data import (
+    load_versions,
+    load_version_data,
+    load_own_confirmations,
+    load_own_reviews,
+    load_review_targets,
+)
+from app.services.game_finalize import (
+    try_finalize,
 )
 from app.models import (
     Faction,
@@ -31,7 +42,7 @@ from app.models import (
     Review,
     Team,
     Wargame,
-    WargameEdition, PlayerFactionStatistics,
+    WargameEdition
 )
 
 STATUS_LABELS = {
@@ -115,12 +126,12 @@ def view(conflict_id):
         )
 
     can_act = (
-        is_participant
-        and current_version["response"] is None
-    ) or (
-        is_participant
-        and current_version["response"].response == "WAIT"
-    )
+                      is_participant
+                      and current_version["response"] is None
+              ) or (
+                      is_participant
+                      and current_version["response"].response == "WAIT"
+              )
 
     own_reviews = load_own_reviews(conflict, g.current_user)
     review_targets = load_review_targets(conflict, g.current_user)
@@ -154,6 +165,8 @@ def view(conflict_id):
         response_label=response_label,
         result_label=result_label,
     )
+
+
 @confirm_bp.route("/<int:conflict_id>/confirm", methods=["POST"])
 @login_required
 def confirm_version(conflict_id):
@@ -306,6 +319,7 @@ def add_review(conflict_id):
         )
     )
 
+
 @confirm_bp.route("/<int:conflict_id>/conflict", methods=["GET", "POST"])
 @login_required
 def conflict_version(conflict_id):
@@ -360,6 +374,7 @@ def conflict_version(conflict_id):
         )
 
     return handle_conflict_post(conflict, source_version, page)
+
 
 def handle_conflict_post(conflict, source_version, source_page):
     form = request.form
@@ -800,69 +815,12 @@ def handle_conflict_post(conflict, source_version, source_page):
     )
 
 
-def load_versions(conflict):
-    rows = (
-        GameVersion.query
-        .filter(GameVersion.game_conflict_id == conflict.id)
-        .all()
-    )
-
-    games_by_id = {
-        row.game.id: row.game
-        for row in rows
-        if row.game is not None
-    }
-
-    games = list(games_by_id.values())
-
-    games.sort(
-        key=lambda game: (
-            0 if game.id == conflict.original_game_id else 1,
-            game.created_at,
-        )
-    )
-
-    versions = []
-
-    for index, game in enumerate(games):
-        versions.append({
-            "game": game,
-            "author": game.creator,
-            "is_original": game.id == conflict.original_game_id,
-            "page_index": index + 1,
-            "response": None,
-        })
-
-    return versions
-
-
-def _is_own_version(game_id, user_id):
-    game = db.session.get(Game, game_id)
-
-    if game is None:
-        return False
-
-    return game.created_by == user_id
-
-
 def _find_page_of_version(versions, version_id):
     for index, version in enumerate(versions):
         if version["game"].id == version_id:
             return index + 1
 
     return 1
-
-
-def load_version_author_ids(conflict):
-    rows = (
-        db.session.query(Game.created_by)
-        .join(GameVersion, GameVersion.game_id == Game.id)
-        .filter(GameVersion.game_conflict_id == conflict.id)
-        .distinct()
-        .all()
-    )
-
-    return {row[0] for row in rows}
 
 
 def is_user_participant(conflict, user_id):
@@ -897,356 +855,6 @@ def user_has_version(conflict, user_id):
             .first()
             is not None
     )
-
-
-def load_version_data(game):
-    teams = (
-        Team.query
-        .filter(Team.game_id == game.id)
-        .order_by(Team.command_number)
-        .all()
-    )
-
-    team_ids = [team.id for team in teams]
-
-    players_by_team = {}
-
-    if team_ids:
-        player_games = (
-            PlayerGame.query
-            .filter(PlayerGame.team_id.in_(team_ids))
-            .all()
-        )
-
-        for player_game in player_games:
-            players_by_team.setdefault(
-                player_game.team_id,
-                [],
-            ).append(player_game)
-
-    factions_by_player_game = {}
-
-    player_game_ids = [
-        pg.id
-        for list_ in players_by_team.values()
-        for pg in list_
-    ]
-
-    if player_game_ids:
-        game_factions = (
-            GameFaction.query
-            .filter(GameFaction.player_game_id.in_(player_game_ids))
-            .all()
-        )
-
-        for game_faction in game_factions:
-            factions_by_player_game.setdefault(
-                game_faction.player_game_id,
-                [],
-            ).append(game_faction.faction)
-
-    teams_data = []
-
-    for team in teams:
-        players_data = []
-
-        for player_game in players_by_team.get(team.id, []):
-            players_data.append({
-                "player": player_game.player,
-                "factions": factions_by_player_game.get(
-                    player_game.id, []
-                ),
-            })
-
-        teams_data.append({
-            "team": team,
-            "players": players_data,
-        })
-
-    return {
-        "game": game,
-        "teams": teams_data,
-    }
-
-
-def load_own_confirmations(game_ids, user):
-    if not game_ids:
-        return {}
-
-    confirmations = (
-        GameConfirmation.query
-        .filter(
-            GameConfirmation.game_id.in_(game_ids),
-            GameConfirmation.player_id == user.id,
-        )
-        .all()
-    )
-
-    return {
-        confirmation.game_id: confirmation
-        for confirmation in confirmations
-    }
-
-
-def load_own_reviews(conflict, user):
-    reviews = (
-        Review.query
-        .filter(
-            Review.game_id == conflict.original_game_id,
-            Review.author == user.id,
-        )
-        .all()
-    )
-
-    return reviews
-
-
-def try_finalize(conflict):
-    versions = load_versions(conflict)
-
-    for version in versions:
-        game = version["game"]
-
-        if _is_fully_confirmed(game):
-            return finalize_game(conflict, game)
-
-    return None
-
-
-def _is_fully_confirmed(game):
-    teams = (
-        Team.query
-        .filter(Team.game_id == game.id)
-        .all()
-    )
-
-    team_ids = [team.id for team in teams]
-
-    if not team_ids:
-        return False
-
-    participant_ids = {
-        row[0]
-        for row in (
-            db.session.query(PlayerGame.player_id)
-            .filter(PlayerGame.team_id.in_(team_ids))
-            .distinct()
-            .all()
-        )
-    }
-
-    if not participant_ids:
-        return False
-
-    confirmations = (
-        GameConfirmation.query
-        .filter(GameConfirmation.game_id == game.id)
-        .all()
-    )
-
-    if len(confirmations) != len(participant_ids):
-        return False
-
-    return all(
-        confirmation.response == "CONFIRM"
-        for confirmation in confirmations
-    )
-
-
-def finalize_game(conflict, game):
-    update_statistics_for_game(game)
-
-    original_game_id = conflict.original_game_id
-
-    if original_game_id is not None and original_game_id != game.id:
-        (
-            Review.query
-            .filter(Review.game_id == original_game_id)
-            .update(
-                {"game_id": game.id},
-                synchronize_session=False,
-            )
-        )
-
-    game.status = "OFFICIAL"
-
-    official_game_id = game.id
-
-    other_game_ids = [
-        version["game"].id
-        for version in load_versions(conflict)
-        if version["game"].id != official_game_id
-    ]
-
-    db.session.delete(conflict)
-    db.session.flush()
-
-    for other_id in other_game_ids:
-        other_game = db.session.get(Game, other_id)
-
-        if other_game is not None:
-            db.session.delete(other_game)
-
-    return official_game_id
-
-
-def update_statistics_for_game(game):
-    teams = (
-        Team.query
-        .filter(Team.game_id == game.id)
-        .order_by(Team.command_number)
-        .all()
-    )
-
-    team_ids = [team.id for team in teams]
-
-    if not team_ids:
-        return
-
-    player_games = (
-        PlayerGame.query
-        .filter(PlayerGame.team_id.in_(team_ids))
-        .all()
-    )
-
-    processed_players = set()
-
-    for team in teams:
-        team_player_games = [
-            player_game
-            for player_game in player_games
-            if player_game.team_id == team.id
-        ]
-
-        for player_game in team_player_games:
-            player_id = player_game.player_id
-
-            if player_id in processed_players:
-                continue
-
-            processed_players.add(player_id)
-
-            faction_ids = [
-                row[0]
-                for row in (
-                    db.session.query(GameFaction.faction_id)
-                    .filter(GameFaction.player_game_id == player_game.id)
-                    .all()
-                )
-            ]
-
-            if not faction_ids:
-                continue
-
-            faction_list_id = find_or_create_faction_list(faction_ids)
-
-            statistics = (
-                PlayerFactionStatistics.query
-                .filter(
-                    PlayerFactionStatistics.faction_list_id
-                    == faction_list_id,
-                    PlayerFactionStatistics.player_id == player_id,
-                    PlayerFactionStatistics.edition_id == game.edition_id,
-                )
-                .first()
-            )
-
-            if statistics is None:
-                statistics = PlayerFactionStatistics(
-                    faction_list_id=faction_list_id,
-                    player_id=player_id,
-                    edition_id=game.edition_id,
-                    game_count=0,
-                    wins=0,
-                    losses=0,
-                )
-                db.session.add(statistics)
-
-            statistics.game_count += 1
-
-            if team.result == "WIN":
-                statistics.wins += 1
-            elif team.result == "LOSS":
-                statistics.losses += 1
-
-
-def load_review_targets(conflict, user):
-    own_version = (
-        db.session.query(Game)
-        .join(GameVersion, GameVersion.game_id == Game.id)
-        .filter(
-            GameVersion.game_conflict_id == conflict.id,
-            Game.created_by == user.id,
-        )
-        .first()
-    )
-
-    if own_version is not None:
-        source_game_id = own_version.id
-    else:
-        source_game_id = conflict.original_game_id
-
-    if source_game_id is None:
-        return []
-
-    teams = (
-        Team.query
-        .filter(Team.game_id == source_game_id)
-        .all()
-    )
-
-    team_ids = [team.id for team in teams]
-
-    if not team_ids:
-        return []
-
-    player_games = (
-        PlayerGame.query
-        .filter(PlayerGame.team_id.in_(team_ids))
-        .all()
-    )
-
-    participant_ids = {
-        player_game.player_id
-        for player_game in player_games
-    }
-
-    participant_ids.discard(user.id)
-
-    if not participant_ids:
-        return []
-
-    players = (
-        Player.query
-        .filter(Player.id.in_(participant_ids))
-        .order_by(Player.nickname)
-        .all()
-    )
-
-    existing_reviews = (
-        Review.query
-        .filter(
-            Review.game_id == conflict.original_game_id,
-            Review.author == user.id,
-            Review.player_id.in_(participant_ids),
-        )
-        .all()
-    )
-
-    reviews_by_player_id = {
-        review.player_id: review
-        for review in existing_reviews
-    }
-
-    targets = []
-
-    for player in players:
-        targets.append({
-            "player": player,
-            "review": reviews_by_player_id.get(player.id),
-        })
-
-    return targets
 
 
 def build_form_data_from_game(game):
@@ -1325,56 +933,3 @@ def render_conflict_form(
         **context,
     )
 
-
-def load_form_context():
-    wargames = (
-        Wargame.query
-        .order_by(Wargame.name)
-        .all()
-    )
-
-    editions = (
-        WargameEdition.query
-        .order_by(
-            WargameEdition.wargame_id,
-            WargameEdition.id,
-        )
-        .all()
-    )
-
-    editions_by_wargame = {}
-
-    for edition in editions:
-        editions_by_wargame.setdefault(
-            edition.wargame_id,
-            [],
-        ).append({
-            "id": edition.id,
-            "edition_name": edition.edition_name,
-        })
-
-    factions = (
-        Faction.query
-        .order_by(
-            Faction.wargame_id,
-            Faction.faction_name,
-        )
-        .all()
-    )
-
-    factions_by_wargame = {}
-
-    for faction in factions:
-        factions_by_wargame.setdefault(
-            faction.wargame_id,
-            [],
-        ).append({
-            "id": faction.id,
-            "faction_name": faction.faction_name,
-        })
-
-    return {
-        "wargames": wargames,
-        "editions_by_wargame": editions_by_wargame,
-        "factions_by_wargame": factions_by_wargame,
-    }

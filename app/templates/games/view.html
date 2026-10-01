@@ -53,63 +53,7 @@
 
     </div>
 
-
-    <section class="game-view-teams">
-
-        <h2 class="profile-section-title">
-            Команды
-        </h2>
-
-        {% for team_data in teams_data %}
-
-        <div class="confirm-team">
-
-            <h3 class="confirm-team-title">
-                {{ team_data.team.name }}
-                —
-                {{ result_label(team_data.team.result) }}
-                {% if team_data.team.score is not none %}
-                ({{ team_data.team.score }})
-                {% endif %}
-            </h3>
-
-            <ul class="confirm-team-players">
-
-                {% for player_data in team_data.players %}
-
-                <li class="confirm-player">
-
-                    <a
-                            href="{{ url_for(
-                                    'profile.view',
-                                    nickname=player_data.player.nickname,
-                                ) }}"
-                            class="confirm-player-name"
-                    >
-                        {{ player_data.player.nickname }}
-                    </a>
-
-                    <span class="confirm-player-separator">
-        —
-    </span>
-
-                    <span class="confirm-player-factions">
-                                {% for faction in player_data.factions %}
-                                    {{ faction.faction_name }}{% if not loop.last %}, {% endif %}
-                                {% endfor %}
-                            </span>
-
-                </li>
-
-                {% endfor %}
-
-            </ul>
-
-        </div>
-
-        {% endfor %}
-
-    </section>
+    {% include "_game_version_data.html" %}
 
 
     <section class="confirm-reviews">
