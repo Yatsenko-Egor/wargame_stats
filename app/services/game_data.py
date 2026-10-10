@@ -260,3 +260,30 @@ def load_game_reviews(game):
         .order_by(Review.created_at.desc())
         .all()
     )
+
+
+def load_list_participants(game_ids):
+    if not game_ids:
+        return {}
+
+    rows = (
+        db.session.query(
+            Team.game_id,
+            Player.nickname,
+        )
+        .join(PlayerGame, PlayerGame.team_id == Team.id)
+        .join(Player, Player.id == PlayerGame.player_id)
+        .filter(Team.game_id.in_(game_ids))
+        .order_by(Team.game_id, Player.nickname)
+        .all()
+    )
+
+    result = {}
+
+    for game_id, nickname in rows:
+        result.setdefault(game_id, []).append(nickname)
+
+    for nicknames in result.values():
+        nicknames.sort()
+
+    return result

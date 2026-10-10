@@ -1,4 +1,4 @@
-from flask import Flask, g
+from flask import Flask, g, flash, redirect, url_for
 
 from config import Config
 from app.extensions import db, migrate
@@ -10,6 +10,7 @@ from app.confirm import confirm_bp
 from app.statistics import statistics_bp
 from app.players import players_bp
 from app.moderation import moderation_bp
+from app.admin import admin_bp
 
 
 def create_app():
@@ -27,10 +28,19 @@ def create_app():
     app.register_blueprint(statistics_bp)
     app.register_blueprint(players_bp)
     app.register_blueprint(moderation_bp)
+    app.register_blueprint(admin_bp)
 
     @app.before_request
     def load_current_user():
         g.current_user = get_current_user()
+
+        if g.current_user is not None and g.current_user.is_deleted:
+            from app.auth.session import logout_user
+
+            logout_user()
+            g.current_user = None
+            flash("Ваш аккаунт удалён.")
+            return redirect(url_for("auth.login"))
 
     @app.context_processor
     def inject_current_user():

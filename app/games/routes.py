@@ -2,6 +2,7 @@ from datetime import datetime
 
 from flask import (
     abort,
+    flash,
     g,
     jsonify,
     redirect,
@@ -32,13 +33,15 @@ from app.models import (
     Wargame,
     WargameEdition,
 )
-from app.services.game_data import load_version_data, load_game_reviews
+from app.services.game_data import load_version_data, load_game_reviews, load_list_participants
 
 RESULT_LABELS = {
     "WIN": "Победа",
     "LOSS": "Поражение",
     "DRAW": "Ничья",
 }
+
+PER_PAGE = 30
 
 
 def result_label(value):
@@ -62,6 +65,14 @@ def render_new_form(error=None, form_data=None):
 @games_bp.route("/new", methods=["GET", "POST"])
 @login_required
 def new():
+    if g.current_user.is_blocked:
+        flash("Вы заблокированы для создания партий.")
+        return redirect(
+            url_for(
+                "profile.view",
+                nickname=g.current_user.nickname,
+            )
+        )
     if request.method == "GET":
         return render_new_form()
 
@@ -506,4 +517,136 @@ def view(game_id):
         reviews=reviews,
         creator=game.creator,
         result_label=result_label,
+    )
+
+
+@games_bp.route("/")
+@login_required
+def list_games():
+    wargames = (
+        Wargame.query
+        .order_by(Wargame.name)
+        .all()
+    )
+
+    selected_wargame_id = request.args.get("wargame", type=int)
+
+    wargame_ids = {wargame.id for wargame in wargames}
+
+    if selected_wargame_id not in wargame_ids:
+        selected_wargame_id = None
+
+    editions = (
+        WargameEdition.query
+        .order_by(
+            WargameEdition.wargame_id,
+            WargameEdition.id,
+        )
+        .all()
+    )
+
+    editions_by_wargame = {}
+
+    for edition in editions:
+        editions_by_wargame.setdefault(
+            edition.wargame_id,
+            [],
+        ).append(edition)
+
+    if selected_wargame_id is not None:
+        available_editions = editions_by_wargame.get(
+            selected_wargame_id,
+            [],
+        )
+    else:
+        available_editions = editions
+
+    available_edition_ids = {
+        edition.id for edition in available_editions
+    }
+
+    selected_edition_id = request.args.get("edition", type=int)
+
+    if selected_edition_id not in available_edition_ids:
+        selected_edition_id = None
+
+    date_raw = request.args.get("date", "").strip()
+
+    selected_date = None
+
+    if date_raw:
+        try:
+            selected_date = date_type.fromisoformat(date_raw)
+        except ValueError:
+            selected_date = None
+
+    page = request.args.get("page", default=1, type=int)
+
+    query = (
+        Game.query
+        .filter(Game.status == "OFFICIAL")
+    )
+
+    if selected_wargame_id is not None:
+        query = query.join(
+            WargameEdition,
+            WargameEdition.id == Game.edition_id,
+        ).filter(
+            WargameEdition.wargame_id == selected_wargame_id
+        )
+
+    if selected_edition_id is not None:
+        query = query.filter(
+            Game.edition_id == selected_edition_id
+        )
+
+    if selected_date is not None:
+        query = query.filter(Game.date == selected_date)
+
+    query = query.order_by(
+        Game.date.desc(),
+        Game.id.desc(),
+    )
+
+    total_count = query.count()
+    total_pages = max(1, (total_count + PER_PAGE - 1) // PER_PAGE)
+
+    if page < 1:
+        page = 1
+
+    if page > total_pages:
+        page = total_pages
+
+    games = (
+        query
+        .limit(PER_PAGE)
+        .offset((page - 1) * PER_PAGE)
+        .all()
+    )
+
+    game_ids = [game.id for game in games]
+
+    participants_by_game = load_list_participants(game_ids)
+
+    rows = []
+
+    for game in games:
+        rows.append({
+            "game": game,
+            "wargame_name": game.edition.wargame.name,
+            "edition_name": game.edition.edition_name,
+            "participants": participants_by_game.get(game.id, []),
+        })
+
+    return render_template(
+        "games/list.html",
+        rows=rows,
+        wargames=wargames,
+        available_editions=available_editions,
+        selected_wargame_id=selected_wargame_id,
+        selected_edition_id=selected_edition_id,
+        selected_date=selected_date,
+        page=page,
+        total_pages=total_pages,
+        total_count=total_count,
     )

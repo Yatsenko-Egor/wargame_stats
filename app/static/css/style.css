@@ -2076,3 +2076,236 @@ select {
 
     margin-top: 24px;
 }
+
+
+/* =========================
+   ADMIN
+   ========================= */
+
+.admin-filters {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 16px;
+
+    align-items: flex-end;
+
+    margin-bottom: 28px;
+}
+
+
+.admin-filter-field {
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+}
+
+
+.admin-filter-field .form-input {
+    min-width: 280px;
+}
+
+
+.admin-table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    font-size: 14px;
+}
+
+
+.admin-table th,
+.admin-table td {
+    padding: 12px 14px;
+
+    border-bottom: 1px solid var(--color-border);
+
+    text-align: left;
+
+    vertical-align: middle;
+}
+
+
+.admin-table th {
+    color: var(--color-gray-light);
+
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+
+.admin-table tr:hover td {
+    background-color: var(--color-background-light);
+}
+
+
+.admin-inline-form {
+    margin: 0;
+
+    display: inline-block;
+}
+
+
+.form-select-small {
+    min-width: 140px;
+
+    padding: 6px 10px;
+}
+
+
+.admin-role-static {
+    color: var(--color-gray-light);
+
+    font-size: 14px;
+}
+
+
+.admin-deleted-mark {
+    color: var(--color-gray-light);
+
+    font-size: 12px;
+}
+
+
+.admin-row-deleted td {
+    color: var(--color-gray-light);
+}
+
+
+@media (max-width: 700px) {
+
+    .admin-filter-field {
+        width: 100%;
+    }
+
+
+    .admin-filter-field .form-input {
+        width: 100%;
+
+        min-width: 0;
+    }
+
+
+    .admin-table {
+        font-size: 13px;
+    }
+
+
+    .admin-table th,
+    .admin-table td {
+        padding: 9px 10px;
+    }
+
+
+    .form-select-small {
+        min-width: 0;
+
+        width: 100%;
+    }
+
+}
+
+/* =========================
+   GAMES LIST
+   ========================= */
+
+.games-filters {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 16px;
+
+    align-items: flex-end;
+
+    margin-bottom: 28px;
+}
+
+
+.games-filter-field {
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+}
+
+
+.games-filter-field .form-select,
+.games-filter-field .form-input {
+    min-width: 220px;
+}
+
+
+.games-list-table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    font-size: 14px;
+}
+
+
+.games-list-table th,
+.games-list-table td {
+    padding: 12px 14px;
+
+    border-bottom: 1px solid var(--color-border);
+
+    text-align: left;
+
+    vertical-align: top;
+}
+
+
+.games-list-table th {
+    color: var(--color-gray-light);
+
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+
+.games-list-table tr:hover td {
+    background-color: var(--color-background-light);
+}
+
+
+@media (max-width: 700px) {
+
+    .games-filter-field {
+        width: 100%;
+    }
+
+
+    .games-filter-field .form-select,
+    .games-filter-field .form-input {
+        min-width: 0;
+        width: 100%;
+    }
+
+
+    .games-list-table {
+        font-size: 13px;
+    }
+
+
+    .games-list-table th,
+    .games-list-table td {
+        padding: 9px 10px;
+    }
+
+}
+
+.nav-action-button {
+    min-height: 32px;
+
+    padding: 5px 14px;
+
+    font-size: 13px;
+
+    white-space: nowrap;
+}

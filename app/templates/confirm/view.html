@@ -84,8 +84,12 @@
     </section>
 
     {% include "_game_version_data.html" %}
+    {% if current_user and current_user.is_blocked %}
 
-    {% if can_act %}
+    <div class="profile-pending-notice">
+        Вы заблокированы. Создание партий, подтверждение, оспаривание и отзывы недоступны.
+    </div>
+    {% elif can_act %}
 
     <section class="confirm-actions">
 
@@ -133,7 +137,7 @@
             Ваши отзывы
         </h2>
 
-        {% if review_targets %}
+        {% if review_targets and not current_user.is_blocked %}
 
         <ul class="profile-reviews-list">
 

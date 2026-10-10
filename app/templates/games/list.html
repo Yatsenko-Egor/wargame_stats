@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Партии — Wargame Stats
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page">
+
+    <div class="page-header">
+        <h1 class="page-title">
+            Партии
+        </h1>
+    </div>
+
+
+    <form
+        method="get"
+        action="{{ url_for('games.list_games') }}"
+        class="games-filters"
+    >
+
+        <div class="games-filter-field">
+            <label for="wargame" class="form-label">
+                Варгейм
+            </label>
+            <select
+                id="wargame"
+                name="wargame"
+                class="form-select"
+                onchange="this.form.submit()"
+            >
+                <option
+                    value=""
+                    {% if selected_wargame_id is none %}selected{% endif %}
+                >
+                    Все варгеймы
+                </option>
+
+                {% for wargame in wargames %}
+                    <option
+                        value="{{ wargame.id }}"
+                        {% if wargame.id == selected_wargame_id %}selected{% endif %}
+                    >
+                        {{ wargame.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+
+        <div class="games-filter-field">
+            <label for="edition" class="form-label">
+                Редакция
+            </label>
+            <select
+                id="edition"
+                name="edition"
+                class="form-select"
+                onchange="this.form.submit()"
+            >
+                <option
+                    value=""
+                    {% if selected_edition_id is none %}selected{% endif %}
+                >
+                    Все редакции
+                </option>
+
+                {% for edition in available_editions %}
+                    <option
+                        value="{{ edition.id }}"
+                        {% if edition.id == selected_edition_id %}selected{% endif %}
+                    >
+                        {{ edition.edition_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+
+        <div class="games-filter-field">
+            <label for="date" class="form-label">
+                Дата
+            </label>
+            <input
+                type="date"
+                id="date"
+                name="date"
+                class="form-input"
+                value="{{ selected_date.isoformat() if selected_date else '' }}"
+                onchange="this.form.submit()"
+            >
+        </div>
+
+    </form>
+
+
+    {% if rows %}
+
+        <table class="games-list-table">
+
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Варгейм / Редакция</th>
+                    <th>Участники</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <td>
+                            {{ row.game.date.strftime("%d.%m.%Y") }}
+                        </td>
+                        <td>
+                            {{ row.wargame_name }}
+                            /
+                            {{ row.edition_name }}
+                        </td>
+                        <td>
+                            <a
+                                href="{{ url_for(
+                                    'games.view',
+                                    game_id=row.game.id,
+                                ) }}"
+                            >
+                                {{ row.participants | join(", ") }}
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+
+
+        {% if total_pages > 1 %}
+
+            <nav class="profile-pagination">
+
+                {% for page_number in range(1, total_pages + 1) %}
+
+                    {% if page_number == page %}
+
+                        <span class="profile-pagination-current">
+                            {{ page_number }}
+                        </span>
+
+                    {% else %}
+
+                        <a
+                            href="{{ url_for(
+                                'games.list_games',
+                                wargame=selected_wargame_id or '',
+                                edition=selected_edition_id or '',
+                                date=selected_date.isoformat() if selected_date else '',
+                                page=page_number,
+                            ) }}"
+                            class="profile-pagination-link"
+                        >
+                            {{ page_number }}
+                        </a>
+
+                    {% endif %}
+
+                {% endfor %}
+
+            </nav>
+
+        {% endif %}
+
+    {% else %}
+
+        <p class="profile-empty">
+            Нет партий
+        </p>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

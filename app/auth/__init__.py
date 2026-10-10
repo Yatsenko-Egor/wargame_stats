@@ -167,6 +167,13 @@ def login():
             next=next_url,
         )
 
+    if player.is_deleted:
+        return render_template(
+            "auth/login.html",
+            error="Аккаунт удалён.",
+            next=next_url,
+        )
+
     login_user(player.id)
 
     if next_url:

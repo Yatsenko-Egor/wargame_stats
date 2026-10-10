@@ -22,8 +22,13 @@
         </a>
 
         <nav class="site-nav">
+
             <a href="{{ url_for('statistics.wargames') }}">
                 Статистика
+            </a>
+
+            <a href="{{ url_for('games.list_games') }}">
+                Партии
             </a>
 
             <a href="{{ url_for('players.index') }}">
@@ -36,6 +41,18 @@
             </a>
             {% endif %}
 
+            {% if current_user and current_user.role == "ADMIN" %}
+            <a href="{{ url_for('admin.index') }}">
+                Админ-панель
+            </a>
+            {% endif %}
+
+            <a
+                    href="{{ url_for('games.new') }}"
+                    class="btn btn-primary btn-small nav-action-button"
+            >
+                Зарегистрировать партию
+            </a>
 
             {% if current_user %}
             <a

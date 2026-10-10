@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Админка — Wargame Stats
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page">
+
+    <div class="page-header">
+        <h1 class="page-title">
+            Админка
+        </h1>
+    </div>
+
+
+    <form
+        method="get"
+        action="{{ url_for('admin.index') }}"
+        class="admin-filters"
+    >
+
+        <div class="admin-filter-field">
+            <label for="q" class="form-label">
+                Поиск
+            </label>
+            <input
+                type="text"
+                id="q"
+                name="q"
+                class="form-input"
+                value="{{ q }}"
+                placeholder="Ник или email"
+                autocomplete="off"
+            >
+        </div>
+
+        <div class="admin-filter-field">
+            <button
+                type="submit"
+                class="btn btn-primary btn-small"
+            >
+                Найти
+            </button>
+        </div>
+
+    </form>
+
+
+    {% if players %}
+
+        <table class="admin-table">
+
+            <thead>
+                <tr>
+                    <th>Ник</th>
+                    <th>Email</th>
+                    <th>Роль</th>
+                    <th>Блокировка</th>
+                    <th>Удаление</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in players %}
+                    {% set player = row.player %}
+                    {% set disabled = row.is_admin or row.is_self or player.is_deleted %}
+
+                    <tr class="{% if player.is_deleted %}admin-row-deleted{% endif %}">
+
+                        <td>
+                            {{ player.nickname }}
+                            {% if player.is_deleted %}
+                                <span class="admin-deleted-mark">
+                                    (удалён)
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ player.email }}
+                        </td>
+
+                        <td>
+                            {% if row.is_admin %}
+
+                                <span class="admin-role-static">
+                                    ADMIN
+                                </span>
+
+                            {% elif player.is_deleted %}
+
+                                <span class="admin-role-static">
+                                    {{ player.role }}
+                                </span>
+
+                            {% else %}
+
+                                <form
+                                    method="post"
+                                    action="{{ url_for(
+                                        'admin.change_role',
+                                        player_id=player.id,
+                                    ) }}"
+                                    class="admin-inline-form"
+                                >
+                                    <select
+                                        name="role"
+                                        class="form-select form-select-small"
+                                        onchange="this.form.submit()"
+                                        {% if disabled %}disabled{% endif %}
+                                    >
+                                        <option
+                                            value="USER"
+                                            {% if player.role == 'USER' %}selected{% endif %}
+                                        >
+                                            USER
+                                        </option>
+                                        <option
+                                            value="MODERATOR"
+                                            {% if player.role == 'MODERATOR' %}selected{% endif %}
+                                        >
+                                            MODERATOR
+                                        </option>
+                                    </select>
+                                </form>
+
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if player.is_deleted %}
+
+                                <span class="admin-role-static">
+                                    —
+                                </span>
+
+                            {% elif disabled %}
+
+                                <span class="admin-role-static">
+                                    —
+                                </span>
+
+                            {% elif player.is_blocked %}
+
+                                <form
+                                    method="post"
+                                    action="{{ url_for(
+                                        'admin.unblock_player_view',
+                                        player_id=player.id,
+                                    ) }}"
+                                    class="admin-inline-form"
+                                >
+                                    <button
+                                        type="submit"
+                                        class="btn btn-secondary btn-small"
+                                    >
+                                        Разблокировать
+                                    </button>
+                                </form>
+
+                            {% else %}
+
+                                <form
+                                    method="post"
+                                    action="{{ url_for(
+                                        'admin.block_player_view',
+                                        player_id=player.id,
+                                    ) }}"
+                                    class="admin-inline-form"
+                                >
+                                    <button
+                                        type="submit"
+                                        class="btn btn-secondary btn-small"
+                                    >
+                                        Заблокировать
+                                    </button>
+                                </form>
+
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if player.is_deleted %}
+
+                                <form
+                                    method="post"
+                                    action="{{ url_for(
+                                        'admin.restore_player_view',
+                                        player_id=player.id,
+                                    ) }}"
+                                    class="admin-inline-form"
+                                >
+                                    <button
+                                        type="submit"
+                                        class="btn btn-secondary btn-small"
+                                    >
+                                        Восстановить
+                                    </button>
+                                </form>
+
+                            {% elif disabled %}
+
+                                <span class="admin-role-static">
+                                    —
+                                </span>
+
+                            {% else %}
+
+                                <form
+                                    method="post"
+                                    action="{{ url_for(
+                                        'admin.delete_player_view',
+                                        player_id=player.id,
+                                    ) }}"
+                                    class="admin-inline-form"
+                                    onsubmit="return confirm('Удалить игрока {{ player.nickname }}?');"
+                                >
+                                    <button
+                                        type="submit"
+                                        class="btn btn-secondary btn-small"
+                                    >
+                                        Удалить
+                                    </button>
+                                </form>
+
+                            {% endif %}
+                        </td>
+
+                    </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+
+
+        {% if total_pages > 1 %}
+
+            <nav class="profile-pagination">
+
+                {% for page_number in range(1, total_pages + 1) %}
+
+                    {% if page_number == page %}
+
+                        <span class="profile-pagination-current">
+                            {{ page_number }}
+                        </span>
+
+                    {% else %}
+
+                        <a
+                            href="{{ url_for(
+                                'admin.index',
+                                q=q,
+                                page=page_number,
+                            ) }}"
+                            class="profile-pagination-link"
+                        >
+                            {{ page_number }}
+                        </a>
+
+                    {% endif %}
+
+                {% endfor %}
+
+            </nav>
+
+        {% endif %}
+
+    {% else %}
+
+        <p class="profile-empty">
+            Игроков не найдено.
+        </p>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

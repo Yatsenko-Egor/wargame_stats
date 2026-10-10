@@ -39,6 +39,16 @@ class Player(db.Model):
         server_default="USER",
     )
     avatar_url = db.Column(db.Text)
+    is_blocked = db.Column(
+        db.Boolean,
+        nullable=False,
+        server_default=db.text("false"),
+    )
+    is_deleted = db.Column(
+        db.Boolean,
+        nullable=False,
+        server_default=db.text("false"),
+    )
     updated_at = db.Column(
         db.DateTime(timezone=True),
         nullable=False,

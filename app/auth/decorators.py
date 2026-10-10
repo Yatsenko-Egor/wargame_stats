@@ -31,3 +31,19 @@ def moderator_required(view):
         return view(*args, **kwargs)
 
     return wrapped_view
+
+
+def admin_required(view):
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if g.get("current_user") is None:
+            return redirect(
+                url_for("auth.login", next=request.full_path)
+            )
+
+        if g.current_user.role != "ADMIN":
+            abort(403)
+
+        return view(*args, **kwargs)
+
+    return wrapped_view

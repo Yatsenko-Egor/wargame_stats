@@ -175,6 +175,15 @@ def confirm_version(conflict_id):
     if conflict is None:
         abort(404)
 
+    if g.current_user.is_blocked:
+        flash("Вы заблокированы для подтверждения партий.")
+        return redirect(
+            url_for(
+                "confirm.view",
+                conflict_id=conflict.id,
+            )
+        )
+
     version_id = request.form.get("version", type=int)
 
     if version_id is None:
@@ -264,6 +273,15 @@ def add_review(conflict_id):
     if conflict is None:
         abort(404)
 
+    if g.current_user.is_blocked:
+        flash("Вы заблокированы для оставления отзывов.")
+        return redirect(
+            url_for(
+                "confirm.view",
+                conflict_id=conflict.id,
+            )
+        )
+
     is_participant = is_user_participant(conflict, g.current_user.id)
 
     if not is_participant:
@@ -327,6 +345,15 @@ def conflict_version(conflict_id):
 
     if conflict is None:
         abort(404)
+
+    if g.current_user.is_blocked:
+        flash("Вы заблокированы для оспаривания партий.")
+        return redirect(
+            url_for(
+                "confirm.view",
+                conflict_id=conflict.id,
+            )
+        )
 
     is_participant = is_user_participant(conflict, g.current_user.id)
 
