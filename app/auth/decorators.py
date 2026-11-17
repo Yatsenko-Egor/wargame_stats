@@ -38,7 +38,7 @@ def admin_required(view):
     def wrapped_view(*args, **kwargs):
         if g.get("current_user") is None:
             return redirect(
-                url_for("auth.login", next=request.full_path)
+                url_for("auth.login", next=request.full_path.rstrip("?"))
             )
 
         if g.current_user.role != "ADMIN":

@@ -56,7 +56,12 @@ def _render_register(error=None):
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
     if g.current_user is not None:
-        return redirect(url_for("auth.test"))
+        return redirect(
+            url_for(
+                "profile.view",
+                nickname=g.current_user.nickname,
+            )
+        )
 
     if request.method == "GET":
         return _render_register()
@@ -134,19 +139,31 @@ def register():
             "Registration failed. Please try again."
         )
 
-    # Сразу логиним — иначе пользователь после регистрации
-    # попадёт на /auth/login из-за @login_required.
     login_user(player.id)
 
-    return redirect(url_for("auth.test"))
+    return redirect(
+        url_for(
+            "profile.view",
+            nickname=player.nickname,
+        )
+    )
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     if g.current_user is not None:
-        return redirect(url_for("auth.test"))
+        return redirect(
+            url_for(
+                "profile.view",
+                nickname=g.current_user.nickname,
+            )
+        )
 
-    next_url = _safe_next_url(request.args.get("next"))
+    next_raw = (
+            request.form.get("next")
+            or request.args.get("next")
+    )
+    next_url = _safe_next_url(next_raw)
 
     if request.method == "GET":
         return render_template(
@@ -179,23 +196,15 @@ def login():
     if next_url:
         return redirect(next_url)
 
-    return redirect(url_for("auth.test"))
+    return redirect(
+        url_for(
+            "profile.view",
+            nickname=player.nickname,
+        )
+    )
 
 
 @auth_bp.route("/logout", methods=["POST"])
 def logout():
     logout_user()
     return redirect(url_for("auth.login"))
-
-
-@auth_bp.route("/test")
-@login_required
-def test():
-    current_user = g.current_user
-
-    return (
-        f"ID: {current_user.id}<br>"
-        f"Nickname: {current_user.nickname}<br>"
-        f"Email: {current_user.email}<br>"
-        f"Role: {current_user.role}"
-    )

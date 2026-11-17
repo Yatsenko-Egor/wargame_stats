@@ -1,6 +1,19 @@
-from flask import abort, g, render_template, request
+import os
+import time
+
+from flask import (
+    abort,
+    flash,
+    g,
+    redirect,
+    render_template,
+    request,
+    url_for,
+    current_app
+)
 from sqlalchemy import func
 
+from app.auth import login_required
 from app.extensions import db
 from app.models import (
     Player,
@@ -17,7 +30,12 @@ from app.models import (
     GameConfirmation, GameVersion,
 )
 from app.profile import profile_bp
+from werkzeug.utils import secure_filename
+from PIL import Image
 
+ALLOWED_AVATAR_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+MAX_AVATAR_SIZE = 2 * 1024 * 1024  # 2 MB
+AVATAR_SIZE = 256
 REVIEWS_PER_PAGE = 10
 GAMES_PER_PAGE = 10
 
@@ -753,3 +771,280 @@ def load_reviews(player, page):
     )
 
     return reviews, page, reviews_pages, reviews_total
+
+
+@profile_bp.route("/settings")
+@login_required
+def settings():
+    wargames = (
+        Wargame.query
+        .order_by(Wargame.name)
+        .all()
+    )
+
+    editions = (
+        WargameEdition.query
+        .order_by(
+            WargameEdition.wargame_id,
+            WargameEdition.id,
+        )
+        .all()
+    )
+
+    editions_by_wargame = {}
+
+    for edition in editions:
+        editions_by_wargame.setdefault(
+            edition.wargame_id,
+            [],
+        ).append({
+            "id": edition.id,
+            "edition_name": edition.edition_name,
+        })
+
+    factions = (
+        Faction.query
+        .order_by(
+            Faction.wargame_id,
+            Faction.faction_name,
+        )
+        .all()
+    )
+
+    factions_by_wargame = {}
+
+    for faction in factions:
+        factions_by_wargame.setdefault(
+            faction.wargame_id,
+            [],
+        ).append({
+            "id": faction.id,
+            "faction_name": faction.faction_name,
+        })
+
+    player_factions = (
+        PlayerFaction.query
+        .filter(PlayerFaction.player_id == g.current_user.id)
+        .all()
+    )
+
+    return render_template(
+        "profile/settings.html",
+        wargames=wargames,
+        editions_by_wargame=editions_by_wargame,
+        factions_by_wargame=factions_by_wargame,
+        player_factions=player_factions,
+    )
+
+
+@profile_bp.route("/settings/factions", methods=["POST"])
+@login_required
+def settings_factions():
+    faction_ids_raw = request.form.getlist("faction_ids")
+
+    try:
+        selected_ids = {
+            int(faction_id)
+            for faction_id in faction_ids_raw
+        }
+    except (TypeError, ValueError):
+        flash("Некорректный выбор фракций.")
+        return redirect(url_for("profile.settings"))
+
+    factions = (
+        Faction.query
+        .filter(Faction.id.in_(selected_ids))
+        .all()
+        if selected_ids
+        else []
+    )
+
+    if len(factions) != len(selected_ids):
+        flash("Одна или несколько фракций не найдены.")
+        return redirect(url_for("profile.settings"))
+
+    current = (
+        PlayerFaction.query
+        .filter(PlayerFaction.player_id == g.current_user.id)
+        .all()
+    )
+
+    current_ids = {
+        player_faction.faction_id
+        for player_faction in current
+    }
+
+    to_add = selected_ids - current_ids
+    to_remove = current_ids - selected_ids
+
+    for faction_id in to_add:
+        db.session.add(
+            PlayerFaction(
+                player_id=g.current_user.id,
+                faction_id=faction_id,
+            )
+        )
+
+    for player_faction in current:
+        if player_faction.faction_id in to_remove:
+            db.session.delete(player_faction)
+
+    db.session.commit()
+
+    flash("Фракции обновлены.")
+
+    return redirect(url_for("profile.settings"))
+
+
+@profile_bp.route("/settings/avatar", methods=["POST"])
+@login_required
+def settings_avatar():
+    file = request.files.get("avatar")
+
+    if file is None or file.filename == "":
+        flash("Файл не выбран.")
+        return redirect(url_for("profile.settings"))
+
+    extension = _get_avatar_extension(file.filename)
+
+    if extension is None:
+        flash("Недопустимый формат файла. Разрешены: JPG, PNG, WebP.")
+        return redirect(url_for("profile.settings"))
+
+    file.seek(0, os.SEEK_END)
+    size = file.tell()
+    file.seek(0)
+
+    if size > MAX_AVATAR_SIZE:
+        flash("Файл слишком большой. Максимум 2 МБ.")
+        return redirect(url_for("profile.settings"))
+
+    try:
+        image = Image.open(file)
+        image.load()
+    except Exception:
+        flash("Не удалось прочитать изображение.")
+        return redirect(url_for("profile.settings"))
+
+    image = _crop_to_square(image)
+    image = image.resize(
+        (AVATAR_SIZE, AVATAR_SIZE),
+        Image.LANCZOS,
+    )
+
+    if image.mode in ("RGBA", "P"):
+        image = image.convert("RGB")
+
+    filename = _build_avatar_filename(
+        g.current_user.id,
+        extension,
+    )
+
+    uploads_dir = os.path.join(
+        current_app.static_folder,
+        "uploads",
+        "avatars",
+    )
+
+    filepath = os.path.join(uploads_dir, filename)
+
+    old_avatar_url = g.current_user.avatar_url
+
+    image.save(filepath)
+
+    g.current_user.avatar_url = (
+        f"/static/uploads/avatars/{filename}"
+    )
+
+    db.session.commit()
+
+    _remove_old_avatar(old_avatar_url)
+
+    flash("Аватар обновлён.")
+
+    return redirect(url_for("profile.settings"))
+
+@profile_bp.route("/settings/avatar/delete", methods=["POST"])
+@login_required
+def settings_avatar_delete():
+    old_avatar_url = g.current_user.avatar_url
+
+    if not old_avatar_url:
+        flash("У вас нет установленного аватара.")
+        return redirect(url_for("profile.settings"))
+
+    _remove_old_avatar(old_avatar_url)
+
+    g.current_user.avatar_url = None
+    db.session.commit()
+
+    flash("Аватар удалён.")
+
+    return redirect(url_for("profile.settings"))
+
+def _get_avatar_extension(filename):
+    if "." not in filename:
+        return None
+
+    extension = filename.rsplit(".", 1)[1].lower()
+
+    if extension not in ALLOWED_AVATAR_EXTENSIONS:
+        return None
+
+    return extension
+
+
+def _crop_to_square(image):
+    width, height = image.size
+
+    if width == height:
+        return image
+
+    side = min(width, height)
+
+    left = (width - side) // 2
+    top = (height - side) // 2
+    right = left + side
+    bottom = top + side
+
+    return image.crop((left, top, right, bottom))
+
+
+def _build_avatar_filename(player_id, extension):
+    timestamp = int(time.time())
+
+    return f"{player_id}_{timestamp}.{extension}"
+
+
+def _remove_old_avatar(old_avatar_url):
+    if not old_avatar_url:
+        return
+
+    prefix = "/static/uploads/avatars/"
+
+    if not old_avatar_url.startswith(prefix):
+        return
+
+    old_filename = old_avatar_url[len(prefix):]
+
+    if not old_filename:
+        return
+
+    safe_filename = secure_filename(old_filename)
+
+    if not safe_filename:
+        return
+
+    uploads_dir = os.path.join(
+        current_app.static_folder,
+        "uploads",
+        "avatars",
+    )
+
+    old_filepath = os.path.join(uploads_dir, safe_filename)
+
+    if os.path.exists(old_filepath):
+        try:
+            os.remove(old_filepath)
+        except OSError:
+            pass

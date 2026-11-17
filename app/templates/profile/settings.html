@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Настройки — Wargame Stats
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page">
+
+    <div class="page-header">
+        <h1 class="page-title">
+            Настройки
+        </h1>
+    </div>
+
+
+    <section class="settings-section">
+
+        <h2 class="profile-section-title">
+            Фракции
+        </h2>
+
+        <form
+            method="post"
+            action="{{ url_for('profile.settings_factions') }}"
+            id="factions-form"
+        >
+
+            <div class="faction-add-row">
+
+                <div class="form-group">
+                    <label for="wargame-select" class="form-label">
+                        Варгейм
+                    </label>
+                    <select id="wargame-select" class="form-select">
+                        <option value="">
+                            Выберите варгейм
+                        </option>
+                        {% for wargame in wargames %}
+                            <option value="{{ wargame.id }}">
+                                {{ wargame.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+
+                <div class="form-group">
+                    <label for="faction-select" class="form-label">
+                        Фракция
+                    </label>
+                    <select
+                        id="faction-select"
+                        class="form-select"
+                        disabled
+                    >
+                        <option value="">
+                            Сначала выберите варгейм
+                        </option>
+                    </select>
+                </div>
+
+
+                <div class="form-group">
+                    <button
+                        type="button"
+                        id="add-faction"
+                        class="btn btn-secondary btn-small"
+                        disabled
+                    >
+                        Добавить
+                    </button>
+                </div>
+
+            </div>
+
+
+            <div class="selected-factions">
+
+                <div
+                    id="no-factions"
+                    class="no-factions"
+                    style="display: none;"
+                >
+                    Фракции не выбраны.
+                </div>
+
+                <ul
+                    id="selected-factions-list"
+                    class="selected-factions-list"
+                >
+                    {% for player_faction in player_factions %}
+                        <li
+                            class="selected-faction"
+                            data-faction-id="{{ player_faction.faction.id }}"
+                        >
+                            <span class="selected-faction-name">
+                                {{ player_faction.faction.faction_name }}
+                            </span>
+                            <span class="selected-faction-wargame">
+                                ({{ player_faction.faction.wargame.name }})
+                            </span>
+                            <button
+                                type="button"
+                                class="remove-faction"
+                            >
+                                Удалить
+                            </button>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+            </div>
+
+
+            <div id="selected-faction-inputs">
+                {% for player_faction in player_factions %}
+                    <input
+                        type="hidden"
+                        name="faction_ids"
+                        value="{{ player_faction.faction.id }}"
+                        data-faction-id="{{ player_faction.faction.id }}"
+                    >
+                {% endfor %}
+            </div>
+
+
+            <div class="form-actions">
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                    id="save-factions-btn"
+                    style="display: none;"
+                >
+                    Сохранить фракции
+                </button>
+            </div>
+
+        </form>
+
+    </section>
+
+
+    <section class="settings-section">
+
+        <h2 class="profile-section-title">
+            Аватар
+        </h2>
+
+        <div class="settings-avatar-block">
+
+            <div
+                class="settings-avatar-current"
+                id="avatar-preview-container"
+            >
+                {% if current_user.avatar_url %}
+                    <img
+                        src="{{ current_user.avatar_url }}"
+                        alt="{{ current_user.nickname }}"
+                        class="settings-avatar-image"
+                    >
+                {% else %}
+                    <div class="settings-avatar-placeholder">
+                        {{ current_user.nickname[0] | upper }}
+                    </div>
+                {% endif %}
+            </div>
+
+
+            {% if current_user.avatar_url %}
+                <form
+                    method="post"
+                    action="{{ url_for('profile.settings_avatar_delete') }}"
+                    class="settings-avatar-delete-form"
+                >
+                    <button
+                        type="submit"
+                        class="btn btn-secondary btn-small"
+                        onclick="return confirm('Удалить текущий аватар?');"
+                    >
+                        Удалить аватар
+                    </button>
+                </form>
+            {% endif %}
+
+        </div>
+
+
+        <form
+            method="post"
+            action="{{ url_for('profile.settings_avatar') }}"
+            enctype="multipart/form-data"
+        >
+
+            <div class="form-group">
+                <label for="avatar-input" class="form-label">
+                    Новый аватар
+                </label>
+                <input
+                    type="file"
+                    id="avatar-input"
+                    name="avatar"
+                    class="form-input"
+                    accept="image/jpeg,image/png,image/webp"
+                    required
+                >
+                <div class="form-help">
+                    Формат: JPG, PNG, WebP. Максимальный размер: 2 МБ.
+                </div>
+            </div>
+
+
+            <div class="form-actions">
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                    id="save-avatar-btn"
+                    style="display: none;"
+                >
+                    Сохранить аватар
+                </button>
+            </div>
+
+        </form>
+
+    </section>
+
+</div>
+
+
+<script>
+    const editionsByWargame = {{ editions_by_wargame | tojson }};
+    const factionsByWargame = {{ factions_by_wargame | tojson }};
+</script>
+
+<script
+    src="{{ url_for('static', filename='js/settings.js') }}"
+></script>
+
+{% endblock %}

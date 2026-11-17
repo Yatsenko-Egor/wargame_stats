@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask, g, flash, redirect, url_for
 
 from config import Config
@@ -15,6 +17,11 @@ from app.admin import admin_bp
 
 def create_app():
     app = Flask(__name__)
+
+    os.makedirs(
+        os.path.join(app.static_folder, "uploads", "avatars"),
+        exist_ok=True,
+    )
 
     app.config.from_object(Config)
 

@@ -34,3 +34,6 @@ htmlcov/
 
 # Alembic / migrations
 migrations/versions/__pycache__/
+
+# Uploads
+app/static/uploads/avatars/*
