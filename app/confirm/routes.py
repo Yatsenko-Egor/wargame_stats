@@ -44,6 +44,10 @@ from app.models import (
     Wargame,
     WargameEdition
 )
+from app.games.routes import (
+    DAILY_HARD_LIMIT,
+    get_daily_game_count,
+)
 
 STATUS_LABELS = {
     "PENDING": "Ожидает подтверждения",
@@ -389,21 +393,34 @@ def conflict_version(conflict_id):
     if request.method == "GET":
         source_game = source_version["game"]
         form_data = build_form_data_from_game(source_game)
-        context = load_form_context()
 
-        return render_template(
-            "confirm/version.html",
+        return render_conflict_form(
             conflict=conflict,
             source_version=source_version,
             source_page=page,
+            error=None,
             form_data=form_data,
-            **context,
         )
 
     return handle_conflict_post(conflict, source_version, page)
 
 
 def handle_conflict_post(conflict, source_version, source_page):
+    daily_count = get_daily_game_count(g.current_user.id)
+
+    if daily_count >= DAILY_HARD_LIMIT:
+        return render_conflict_form(
+            conflict=conflict,
+            source_version=source_version,
+            source_page=source_page,
+            error=(
+                "Вы достигли дневного лимита в "
+                f"{DAILY_HARD_LIMIT} партий. "
+                "Новые версии можно будет создать после 00:00 UTC."
+            ),
+            form_data=form_to_json(request.form),
+        )
+
     form = request.form
 
     snapshot = form_to_json(form)
@@ -950,6 +967,9 @@ def render_conflict_form(
 ):
     context = load_form_context()
 
+    daily_count = get_daily_game_count(g.current_user.id)
+    limit_reached = daily_count >= DAILY_HARD_LIMIT
+
     return render_template(
         "confirm/version.html",
         conflict=conflict,
@@ -957,6 +977,8 @@ def render_conflict_form(
         source_page=source_page,
         form_data=form_data,
         error=error,
+        daily_count=daily_count,
+        daily_limit=DAILY_HARD_LIMIT,
+        limit_reached=limit_reached,
         **context,
     )
-

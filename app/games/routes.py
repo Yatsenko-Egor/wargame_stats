@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from flask import (
     abort,
@@ -42,6 +42,8 @@ RESULT_LABELS = {
 }
 
 PER_PAGE = 30
+DAILY_MODERATION_THRESHOLD = 5
+DAILY_HARD_LIMIT = 10
 
 
 def result_label(value):
@@ -50,17 +52,42 @@ def result_label(value):
 
     return RESULT_LABELS.get(value, value)
 
+def get_daily_game_count(player_id):
+    now_utc = datetime.now(timezone.utc)
+    day_start_utc = now_utc.replace(
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0,
+    )
+    day_end_utc = day_start_utc + timedelta(days=1)
+
+    return (
+        Game.query
+        .filter(
+            Game.created_by == player_id,
+            Game.created_at >= day_start_utc,
+            Game.created_at < day_end_utc,
+        )
+        .count()
+    )
+
 
 def render_new_form(error=None, form_data=None):
     context = load_form_context()
+
+    daily_count = get_daily_game_count(g.current_user.id)
+    limit_reached = daily_count >= DAILY_HARD_LIMIT
 
     return render_template(
         "games/new.html",
         error=error,
         form_data=form_data or {},
+        daily_count=daily_count,
+        daily_limit=DAILY_HARD_LIMIT,
+        limit_reached=limit_reached,
         **context,
     )
-
 
 @games_bp.route("/new", methods=["GET", "POST"])
 @login_required
@@ -73,8 +100,18 @@ def new():
                 nickname=g.current_user.nickname,
             )
         )
+
     if request.method == "GET":
         return render_new_form()
+
+    daily_count = get_daily_game_count(g.current_user.id)
+
+    if daily_count >= DAILY_HARD_LIMIT:
+        return render_new_form(
+            "Вы достигли дневного лимита в "
+            f"{DAILY_HARD_LIMIT} партий. "
+            "Новые партии можно будет создать после 00:00 UTC."
+        )
 
     form = request.form
 
@@ -388,10 +425,15 @@ def new():
             if team["result"] is None:
                 team["result"] = "LOSS"
 
+    if daily_count >= DAILY_MODERATION_THRESHOLD:
+        game_status = "MODERATION"
+    else:
+        game_status = "PENDING"
+
     game = Game(
         command_count=len(parsed_teams),
         roster_points=roster_points,
-        status="PENDING",
+        status=game_status,
         date=game_date,
         edition_id=edition.id,
         created_by=g.current_user.id,

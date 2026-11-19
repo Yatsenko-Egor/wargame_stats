@@ -109,13 +109,17 @@ select {
     font-weight: 700;
 
     letter-spacing: 2px;
+
+    transition: color 0.15s ease;
 }
 
-
-.site-logo span {
+.site-logo:hover {
     color: var(--color-primary);
 }
 
+.site-logo span {
+    color: inherit;
+}
 
 .site-nav {
     display: flex;
@@ -2464,4 +2468,237 @@ input[type="file"].form-input::file-selector-button {
 input[type="file"].form-input::file-selector-button:hover {
     background-color: var(--color-primary);
     border-color: var(--color-primary);
+}
+
+/* =========================
+   MAIN PAGE
+   ========================= */
+
+.main-page {
+    max-width: 100%;
+}
+
+
+/* ---------- HERO ---------- */
+
+.main-hero {
+    padding: 40px 0 70px;
+
+    text-align: center;
+}
+
+
+.main-hero-title {
+    margin: 0 0 20px;
+
+    font-size: 48px;
+    font-weight: 700;
+
+    letter-spacing: 1px;
+}
+
+
+.main-hero-subtitle {
+    max-width: 640px;
+
+    margin: 0 auto 35px;
+
+    color: var(--color-gray-light);
+
+    font-size: 17px;
+    line-height: 1.6;
+}
+
+
+.main-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+
+    justify-content: center;
+
+    gap: 14px;
+}
+
+
+.main-hero-actions .btn {
+    min-width: 180px;
+}
+
+
+/* ---------- SECTION TITLE ---------- */
+
+.main-section-title {
+    margin: 0 0 30px;
+
+    font-size: 24px;
+    font-weight: 600;
+
+    letter-spacing: 0.5px;
+
+    text-align: center;
+}
+
+
+/* ---------- STEPS ---------- */
+
+.main-steps {
+    padding: 40px 0;
+}
+
+
+.main-steps-grid {
+    display: grid;
+
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    gap: 20px;
+}
+
+
+.main-step {
+    padding: 28px 24px;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+
+    background-color: var(--color-background-light);
+
+    text-align: center;
+}
+
+
+.main-step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 48px;
+    height: 48px;
+
+    margin-bottom: 18px;
+
+    border-radius: 50%;
+
+    background-color: var(--color-primary);
+    color: var(--color-white);
+
+    font-size: 20px;
+    font-weight: 700;
+}
+
+
+.main-step-title {
+    margin: 0 0 10px;
+
+    font-size: 17px;
+    font-weight: 600;
+}
+
+
+.main-step-text {
+    margin: 0;
+
+    color: var(--color-gray-light);
+
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+
+/* ---------- QUICK LINKS ---------- */
+
+.main-links {
+    padding: 40px 0 0;
+}
+
+
+.main-links-grid {
+    display: grid;
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 20px;
+}
+
+
+.main-link-card {
+    display: flex;
+    flex-direction: column;
+
+    gap: 8px;
+
+    padding: 24px;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+
+    background-color: var(--color-background-light);
+
+    color: var(--color-white);
+
+    transition: border-color 0.15s ease;
+}
+
+
+.main-link-card:hover {
+    border-color: var(--color-primary);
+
+    color: var(--color-white);
+}
+
+
+.main-link-title {
+    font-size: 17px;
+    font-weight: 600;
+}
+
+
+.main-link-text {
+    color: var(--color-gray-light);
+
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+
+/* ---------- RESPONSIVE ---------- */
+
+@media (max-width: 700px) {
+
+    .main-hero {
+        padding: 20px 0 50px;
+    }
+
+
+    .main-hero-title {
+        font-size: 34px;
+    }
+
+    .main-hero-subtitle {
+        font-size: 15px;
+    }
+
+    .main-hero-actions {
+        flex-direction: column;
+
+        align-items: stretch;
+    }
+
+    .main-hero-actions .btn {
+        width: 100%;
+    }
+
+    .main-section-title {
+        font-size: 20px;
+    }
+
+    .main-steps-grid,
+    .main-links-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .main-step {
+        padding: 22px 18px;
+    }
+
 }

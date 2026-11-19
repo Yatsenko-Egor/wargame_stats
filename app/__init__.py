@@ -13,6 +13,7 @@ from app.statistics import statistics_bp
 from app.players import players_bp
 from app.moderation import moderation_bp
 from app.admin import admin_bp
+from app.main import main_bp
 
 
 def create_app():
@@ -28,6 +29,7 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
 
+    app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(profile_bp)
     app.register_blueprint(games_bp)
@@ -36,6 +38,7 @@ def create_app():
     app.register_blueprint(players_bp)
     app.register_blueprint(moderation_bp)
     app.register_blueprint(admin_bp)
+
 
     @app.before_request
     def load_current_user():
